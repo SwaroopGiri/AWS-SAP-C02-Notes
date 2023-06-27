@@ -36,7 +36,24 @@ Lifecycle management can destroy objects, Intelligent tiering can move objects b
 
 S3 supports encryption at rest using AWS key, Customer key, KMS Key or you can use local encryption process Encrypt on client side and then upload.
 
+SSE-S3 key is managed and rotated by aws
+
+SSE-KMS key AWS manage the data key but you manage the customer master key (CMK) in AWS KMS
+
+SSE-C requires that you manage the encryption key
+
+S3 allows you to apply a policy to enforce https connections only
+
+For customer managed S3 SSE-C encryption,
+For Amazon S3 REST API calls, you have to include the following HTTP Request Headers:
+* x-amz-server-side-encryption-customer-algorithm
+* x-amz-server-side-encryption-customer-key
+* x-amz-server-side-encryption-customer-key-MD5 
+ 
+For presigned URLs, you should specify the algorithm using the x-amz-server-side-encryption-customer-algorithm request header.
+
 ### Tricks in S3
+
 Transfer Acceleration: Speed up data uploads using cloudfront in reverse
 
 Requester Pays: The requester can pay for files they'll download instead of bucket owner
@@ -48,6 +65,16 @@ Events: Trigger notifs to SNS, SQS or Lambda on upload/delete/update/restore
 Static Web Hosting
 
 Bittorrent Protocol: Use Bittorrent protocol to retrieve publically available object by automatically generating .torrent files. Share objects in S3 over bittorrent protocol
+
+S3 sync feature is available in AWS CLI using which you can sync data to S3, without manually uploading objects to S3
+
+Remember that the sync feature of S3 only uploads the “delta” or in other words, the “difference” in the subset, it is better for migration tasks with time constraint. Sync can be done days before and then consecutive sync tasks will take fraction of time.
+
+S3 bucket events can directly trigger a lambda function without eventbridge
+
+Origin Access Identity is mainly used to restrict access to objects in S3 bucket and only allow access from cloudfront
+
+When Versioning feature is enabled in S3, it causes all of the existing files to have a Version ID of null
 
 ### Glacier
 
@@ -64,6 +91,8 @@ Glacier Vault Lock can be used for access control like enforcing MFA or immutabl
 Once a glacier vault lock is attached to glacier vault, it is permanent
 
 Bucket policies are resource based policies, if bucket explictly allows access to a user/resource then the policy in IAM role makes no difference.
+
+aws:SecureTransport condition can be used in bucket policies to enforce https connections
 
 ## EBS
 
@@ -138,7 +167,15 @@ MariaDB is open-source fork of MySQL
 
 RDS requires manual intervention to promote read replicas to master, however RDS can have automatic failover to standby databases within a region. 
 
-Amazon Aurora automatically handles failovers to Read Replicas. 
+Amazon Aurora automatically handles failovers to Read Replicas.
+
+Oracle RAC is not supported by RDS
+
+RDS provides Transparent Data Encryption (TDE) for Oracle and SQL Server
+
+Reserved instances are recommended cost-saving to RDS instances that will be running continuously for years
+
+Amazon RDS Proxy sits between your application and your relational database to efficiently manage connections to the database and improve the scalability of the application. Amazon RDS Proxy can be enabled for most applications with no code changes
 
 ## Types of Data
 
@@ -212,6 +249,8 @@ DocumentDB is MongoDB compatable Database. It emulates MongoDB API so it acts li
 
 Backup to S3, Multi-AZ, Integrates KMS, Scalable
 
+DocumentDB is good at handling realtime big data stored in form of documents and is built to scale like amazon aurora
+
 ## VPC
 
 For a VPC, the existing CIDR cannot be modified.
@@ -261,9 +300,41 @@ Cognito users are seperate from IAM users.
 
 For mobile apps, AWS recommends using the Cognito SDK for managing temporary creds
 
+Use Amazon Cognito Identity Pools for mobile apps
+
 OAuth 2.0 is the industry-standard protocol for authorization.
 
+When assuming a role to access a resource in account B, the user gives up all access privileges of its role in account A. If question asks user to use multiple resources in both accounts, it is better to opt for resource based policy instead
+
+IAM Permission Boundaries is an advanced feature to use a managed policy to set the maximum permissions an IAM entity can get
+
+Used to allow developers to self-assign policies and manage their own permissions while making sure they can't escalate their privileges
+
+useful to restrict one specific user instead of whole account using organizations and SCP
+
+IAM Access Analyser is used to find out which resources are accessed externally. Works on S3, IAM Roles, KMS Keys, Lambda, Layers, SQS, Secrets Manager Secrets
+
+You define a zone of trust and anything outside the zone of trust is IAM Access Analyser findings
+
+IAM Access Analyzer can generate policy based on access activity, it reviews cloudtrail logs for upto 90 days and then writes access policies for calls made.
+
+Conditions in IAM policies can be used for conditional access
+
+e.g only let users with MFA access a specific resource
+
+e.g only let users access a particular tagged resource
+
+External ID is important thing while sharing resources with third parties. External ID is a secret between you and third party which you need to define. It requires third party to have an aws account ID.
+
+Amazon cognito replaces token vending machine (TVM)
+
+IAM can securely encrypt your private keys and stores the encrypted version in IAM SSL certificate storage
+
 ## AWS Organizations
+
+Set up AWS Organizations by sending an invitation to all member accounts of the company from the master account of your organization
+
+Create an OrganizationAccountAccessRole IAM role in the member account and grant permission to the master account to assume the role
 
 A publishing account is an account that is used to host standardized versions of resources, such as golden AMIs or a corporate ECR with docker images. These resources can then be shared with other accounts in the organization.
 
@@ -288,9 +359,29 @@ Take note that the NotAction/NotResource is an advanced policy element that expl
 
 Consolidated billing for instances is tagged per AZ and not per account. Instances running in same AZ but different accounts in same organization will benifit from the purchase.
 
+Organization account access role is automatically created when a management account in OU creates a member account using aws Organizations API. That role is assumed everytime the management account performs any tasks on new account.
+
+Consolidated Billing feature
+* Consolidated billing across all accounts
+All Features
+* Ability to apply SCP so members cannot leave orgs
+* Can't go back to consolidated billing once opted for it
+
+SCP does not apply to (First account/root OU) management account, it is a master account with full access.
+
 ## Lambda@Edge
 
 Lambda@Edge is an extension of AWS Lambda which lets you execute functions that customize the content that CloudFront delivers.
+
+Lambda@Edge can only change request and response at edge locations, it doesn't cache
+
+Use Cases of Lambda@Edge:
+* Manipulate HTTP requests and response
+* Implement request filtering before reaching your application
+* User authentication and authorization
+* Generate HTTP responses at edge
+* A/B Testing
+* Bot mitigation at edge
 
 ## Cloudfront
 
@@ -298,9 +389,35 @@ Note that you can’t use a self-signed certificate for HTTPS communication betw
 
 There is no default SSL certificate in ELB, unlike what we have in CloudFront (*.cloudfront.net)
 
+Field-level encryption in cloudfront allows you to securely upload user-submitted sensitive information to your web servers
+
+S3 Cross Region Replication is great for serving dynamic content and Cloudfront is great for caching Static content at edge locations 
+
+Resources serving as origin for cloudfront should be PUBLIC
+
+To prevent users from directly accessing exposed cloudfront origin, use custom HTTP headers and only let the services respond to requests with header sent by cloudfront
+
+You can also use security groups to only allow requests from cloudfront to prevent public access
+
+Cloudfront has origin groups for origin failover (primary/secondary) which can be cross region
+
+Cloudfront can also check response from origin and accordingly cache and display error web pages
+
 ## Cloudtrail
 
 You can configure CloudTrail to deliver log files from multiple regions to a single S3 bucket for a single account.
+
+Cloudtrail supports centralized logging from multiple regions
+
+Cloudtrail events are stored for 90 days by default. Log them to S3 and use athena to analyse older logs
+
+Cloudtrail insights is a paid service which analyses unusual activity in your account
+
+Don't confuse with guardduty. This is for unusual API activity within aws accounts where as guardduty checks for compromised services/instances by checking vpc flow logs, dns logs, etc
+
+Cloudtrail may take upto 15 minutes to deliver an event
+
+Cloudtrail cannot track queries made to rds
 
 ## Application Migration Service (MGN) or Server Migration Service (SMS)
 
@@ -345,14 +462,14 @@ Put into Kinesis Data Streams - Producer (Kinesis Producer Library)
 Pull from Kinesis Data Streams - Consumer (Kinesis Consumer Library)
 
 Kinesis Producers:
-	* 1MB/s or 1000 messages/s write per shard
-	* ProvisionedThroughputException otherwise
-	* Solution: Increase Shards
+* 1MB/s or 1000 messages/s write per shard
+* ProvisionedThroughputException otherwise
+* Solution: Increase Shards
 Kinesis Consumers:
-	* 2MB/s read per shard across all consumers
-	* 5 API calls per second per shard
+* 2MB/s read per shard across all consumers
+* 5 API calls per second per shard
 Kinesis Consumer Enhanced Fan-Out Model:
-	* 2MB/s read Per Shard, per enhanced consumer. (No API Calls needed, push based service)
+* 2MB/s read Per Shard, per enhanced consumer. (No API Calls needed, push based service)
 
 Default limit is 500 shards, can be increased to unlimited. Shard capacity can be on-demand (expensive) or pre provisioned
 
@@ -382,6 +499,16 @@ Activity Worker is a program that interacts with SWF service to get tasks, proce
 
 AWS Batch can boot up an instance, run jobs on it and terminate it when they're done.
 
+AWS Batch in the back end, runs jobs using ECS, EKS, or Fargate (Batch tasks need to have correct IAM Role)
+
+* Batch Managed Compute Environment: You can select an option of running jobs on On-Demand Instances or spot instances to reduce costs. - in VPC
+
+AWS Batch Multi Node Mode is good for large scale HPC
+
+Leverage multiple EC2 instances at same time, good for tightly coupled workflow where multiple instances need to be active at same time
+
+1 main node and many child node, doesn't work with spot instances for now. Works even better with EC2 cluster placement group
+
 ## AWS Auto Scaling
 
 Auto Scaling cooldown defaults to 5 minutes and larger cooldown periods will result in slower scale in/out as the system waits for cooldown period to expire to determine to scale further.
@@ -392,7 +519,19 @@ Use detailed cloudwatch monitoring in auto scaling and EC2 instances to monitor 
 
 ## Amazon Redshift
 
-Redshift does not support multi-AZ deployment. Best bet is to use multi-node cluster which supports data replication and node recovery.
+Redshift does not support multi-AZ deployment. Best bet is to use multi-node cluster which supports data replication and node recovery
+
+Redshift (must provision servers) can be configured to automatically copy snapshots of a cluster to another region
+
+Snapshot copy grant needs to be setup between regions for redshift clusters to seamlessly copy encrypted snapshots
+
+Redshift spectrum (serverless) enables to query data from S3 without loading it. Must have a redshift cluster available to start query
+
+Reshift Workload Management (WLM) enables you to flexibly manage queries' priorities within workloads
+	* Automatic WLM: Managed by Redshift
+	* Manual WLM: Managed by User
+
+Redshift concurrency scaling (Concurrency Scaling Clusters) enables you to provide consistently fast performance with virtually unlimited concurrent users and queries
 
 ## AWS CloudFormation
 
@@ -415,6 +554,8 @@ The easiest method is using the DeletePolicy attribute in the CloudFormation tem
 The "Snapshot" value ensures that a snapshot is created before the CloudFormation stack is deleted
 
 The "Retain" value is incorrect as it keeps the volume rather than creates a snapshot
+
+Cloudformation StackSets can assume execution role in member accounts and deploy stacks and identical rules across all accounts and regions
 
 ## AWS OpsWorks
 
@@ -452,7 +593,10 @@ Most resources can have upto 50 tags
 
 Resource Groups are grouping of AWS resources defined by tags
 
+AWS Config must be enabled for security hub to work
+
 ## AWS System Manager
+
 * Inventory: Collect metadata about instances
 * State Manager: Creates a state to represent a certain configuration is applied to instances. e.g keep track of instances that have been updated to the current stable version of Apache HTTP Server
 * Parameter Store: Shared secure storage for config data, connection strings, passwords, etc
@@ -471,6 +615,10 @@ Resource Groups are grouping of AWS resources defined by tags
 * SSM Documents: They're json or yaml files. Defines actions that system manager performs, includes different steps and parameters that you specify and they're stored as versions and can be shared across different accounts.
 * Session Manager: Allows you to start a secure shell on your instances. Does not need SSH access, bastion hosts, or SSH Keys. All data running through session manager can be logged.
 * OpsCenter: Resolves Operational issues. Aggregates information to resolve issues on each OpsItems like CloudTrail Logs, AWS Config changes and relationships, CloudWatch Alarms, CLoudFormation Stack Information
+
+Parameter policies are only for advanced parameter store and they allow parameters to have an expiration date
+
+There's no way to share secret from secrets manager using resource access manager. Instead use resource based policy on secret
 
 ## Amazon Workspaces
 
@@ -530,6 +678,8 @@ You must enable enableDNSHostnames and enableDNSSupport in VPC settings for priv
 
 They need to be associated with VPCs for them to work. They can be associated with VPCs either by the console, CLI or programmatically via SDK
 
+Route 53 is DNSSEC compliant
+
 DNSSEC works only with public hosted zones
 
 Route 53 has Inbound endpoints and outbound endpoints for Hybrid DNS. Forwarding Resolver rules are mapping of domain name to IP for query forwarding. System rules override forwarding rules.
@@ -557,6 +707,8 @@ Then you can use CloudWatch Logs tools to access the query logs
 The logs from Route 53 cannot be directly forwarded to an S3 bucket or CloudWatch Metrics
 
 VPC Flow Logs can capture IP traffic information going to and from network interfaces but the logs do not contain the DNS query data
+
+Route 53 geolocation redirects traffic and does not block it. Cloudfront Georestriction can be used for blocking countries
 
 Route 53 supports:
 	A (address record)
@@ -611,6 +763,33 @@ Architecture: ECS Cluster --> EC2 Instance --> ECS Service --> Task Definition -
 
 ECS doesn't support third party addons, use EKS
 
+With a diversified Spot instance type and Spot instance draining, you can allow your ECS cluster to spawn other EC2 instance types automatically to handle the load at a very low cost
+
+You can configure various Docker networking modes that will be used by containers in your ECS task. The valid values are none, bridge, awsvpc, and host. The default Docker network mode is bridge.
+* None: the task’s containers do not have external connectivity, and port mappings can’t be specified in the container definition.
+* Bridge: the task utilizes Docker’s built-in virtual network which runs inside each container instance.
+* Host: the task bypasses Docker’s built-in virtual network and maps container ports directly to the EC2 instance’s network interface directly. In this mode, you can’t run multiple instantiations of the same task on a single container instance when port mappings are used.
+* awsvpc: the task is allocated an elastic network interface, and you must specify a NetworkConfiguration when you create a service or run a task with the task definition. When you use this network mode in your task definitions, every task that is launched from that task definition gets its own elastic network interface (ENI) and a primary private IP address. The task networking feature simplifies container networking and gives you more control over how containerized applications communicate with each other and other services within your VPCs.
+awsvpc is default mode for fargate tasks
+
+ECS Anywhere is used to easily run containers on on prem servers
+
+ECS Container Agent and SSM agent needs to be installed on servers
+
+Must have stable connection to AWS Regions
+
+EKS Anywhere is also Kubernetes running on prem but here we leverage Amazon EKS Distro (Amazon's own flavour of EKS) on prem
+
+This does not need a connection to AWS region and just needs EKS Anywhere Installer to be run on the system
+
+Optionally, You can use EKS Connector to connect EKS Anywhere clusters to AWS
+
+You can leverage EKS console in two modes 
+* Fully Connected & Partially Disconnected
+* Fully Disconnected
+
+Fargate tasks cannot be invoked by eventbridge
+
 ## Continous Integration and Continuous delivery (CI/CD)
 
 AWS CodeCommit is hosted github repository
@@ -622,6 +801,8 @@ AWS CodeDeploy provides all of the following deployment features like Automated 
 AWS CodePipeline is a continuous delivery service that enables you to model, visualize, and automate the steps required to release your software
 
 AWS CodeStar is a service that leverages other services like the ones above and has tools which helps us create templates to utilize above servies so you don't have to do things manually
+
+CodeArtifact is only for store, publish and share artifacts. It does not allow the user to configure custom actions or scripts to perform unit tests on artifacts. It is recommended to use AWS CodeBuild for this scenario
 
 ## Cost Optimization
 
@@ -693,11 +874,20 @@ SCP can restrict creation of untagged resources
 
 ## AWS Certificate Manager (ACM)
 
+Having ACM provision and renew public ssl certificates for you is free of cost. ACM loads certs on below services:
+* Load Balancers
+* Cloudfront distributions
+* APIs on API Gateways
+
+ACM is a regional service and cannot copy certs between regions unless you're using it with cloudfront
+
 A wildcard SSL certificate can only handle multiple sub-domains but not different domain names
 
 You can upload all SSL certificates of different domains in the ALB using the console and bind multiple certificates to the same secure listener on your load balancer
 
 ALB will automatically choose the optimal TLS certificate for each client using Server Name Indication (SNI)
+
+SNI solves the problem of loading multiple SSL certs to serve multiple websites into one web server. It is newer protocol (requires client to specify hostname of target to initiate SSL handshake) and works with ALB, NLB and Cloudfront
 
 ## AWS Direct Connect
 
@@ -743,17 +933,17 @@ Hadoop data can be copied to the S3 endpoint after mounting it on a staging work
 
 Amazon Rekognition is image processing service that can extract metadata on objects in a photograph
 
+Amazon Rekognition can store information about detected faces in server-side containers known as collections. You can use the facial information that’s stored in a collection to search for known faces in images, stored videos, and streaming videos. Amazon Rekognition supports the IndexFaces operation. You can use this operation to detect faces in an image and persist information about facial features that are detected in a collection.
+
 ## AWS Lightsail
 
 AWS Lightsail is designed to be a very easy entry-level experience for those just starting out with virtual private servers. A WordPress site can be deployed with literally a single click and does not require AWS Console access or knowledge of EC2 or VPCs
 
-## AWS IoT Core
-
-AWS IoT Core provides all the capability needed to create a smart home console.
-
 ## EC2
 
-The two methods that AWS recommends if you lose a private key for an EC2 key pair are using Systems Manager Automation or using a secondary instance to edit the authorized_keys file.
+The two methods that AWS recommends if you lose a private key for an EC2 key pair are using Systems Manager Automation or using a secondary instance to edit the authorized_keys file
+
+Instance Fleet (Mixed instance types and purchasing options) does not have Auto Scaling
 
 ## AWS Shield
 
@@ -777,10 +967,26 @@ FSx is most commonly used for windows file service integration with AWS. It is u
 
 variants of fsx are Netapp, Openzfs, windows file server(SMB based file shares highly compatible with windows), Lustre (High performance compute clusters with 1000 EC2s)
 
+Amazon Fsx for windows can be mounted on linux instances
+
+FSx for lustre has seamless integration with S3, can R/W S3 as a file system
+
+FSx file system deployments	
+	Scratch File System
+		Temp Storage
+		Data is not Replicated
+		High Burst
+	Persistent File System
+		Replicated multi-AZ
+		Replace failed file within mins
+		
+FSx for Netapp OnTap supports compression, data deduplication
+
 ## Amazon Aurora
+
 Aurora supports upto 15 Read Replicas and Aurora global supports upto 5 cross region read replicas (asynchronous sub second replication)
 
-DocumentDB is good at handling realtime big data stored in form of documents and is built to scale like amazon aurora
+You cannot set Auto Scaling for the master database on Amazon Aurora. You need to Create an Aurora Replica and enable Aurora Auto Scaling for the replica.
 
 ## AWS Glue
 
@@ -788,11 +994,26 @@ Glue data quality provides recommendations and predefined rules to help you ensu
 
 Using Glue data quality, you can setup alerts and data quality metrics to provide confidence in the data you are leveraging
 
+Glue Data Catalog is a catalog of datasets which has a glue data crawler which will look into all databases or any JDBC compatible database and write metadata into data catalog
+
+All services rely of glue data catalog to pull data like Athena, EMR, Redshift, etc
+
 ## Amazon Athena
 
 Amazon Athena supports Apache Parquet, JSON and Apache ORC
 
 Athena does not support XML
+
+Athena Performance Improvements:
+	* Use columner data for cost savings (Apache Parquet or ORC recommended)
+	* Use Glue to convert data to Parquet or ORC
+	* Compress data for smaller retrievals
+	* Partition data in amazon S3 for easy querying on virtual columns
+	* Use bigger files to minimize overhead (>128 MB), larger files are easier to scan and retrieve
+
+Athena Federated Query allows you to query data from anywhere, not just S3. It can be relational, non relational, custom data sources, object, etc (AWS and on prem)
+
+It uses data source connectors which is a lambda function to run federated queries (One Lambda Function per data source connector)
 
 ## AWS Global Accelerator 
 
@@ -845,17 +1066,27 @@ Integrates with Security Groups, WAF, Shield and Network Firewall as well as thi
 
 Can deliver logs and insights to security hub
 
+Network Firewall does not have a security group
+
 ## AWS GuardDuty
 
 GuardDuty can send events to amazon eventbridge and take automatic remidiation actions
+
 Detecting threats with low operational overhead --> GuardDuty
 
-Cloudtrail supports centralized logging from multiple regions
+GuardDuty Delegated Administrator is an account in organization which has all permissions to enable and manage guardduty across all accounts in organization. Can only be done using organization management account
+
+## AWS Compute Optimizer
 
 Compute optimizer is a ML tool which gives recommendations on compute resources
+
 Increase cost efficiency and improve performance by right sizing over-provisioned/under-provisioned resources
+
 Can be activated in one account or across organization
+
 Gives recommendations on Lambda, EC2, ECS Fargate, EBS and Auto Scaling Groups
+
+## Container Services
 
 High Control and High Complexity to low control and low complexity
 	EKS on Container Instances
@@ -867,83 +1098,126 @@ High Control and High Complexity to low control and low complexity
 	ECS Fargate
 	App Runner (Comes with lot of limitations)
 
-App Runner is designed exclusively for synchronous http applications which handles request/response type traffic. It supports public and private endpoints. i.e you can have internal or public facing application. It scales to zero when not used and hence is great for pocs or side projects. App Runner can get expensive at scale!
-App Runner is a region scoped service so another app runner needs to be setup during cross region deployment
 ECS and EKS can run on AWS Wavelength, Fargate, EC2, Outposts and local zones
+
 Fargate is a compute layer for containerized workloads, it handles scaling, security and server management. It integrates with Cloudwatch and container insights.
+
+## App Runner
+
+App Runner is designed exclusively for synchronous http applications which handles request/response type traffic. It supports public and private endpoints. i.e you can have internal or public facing application. It scales to zero when not used and hence is great for pocs or side projects. App Runner can get expensive at scale!
+
+App Runner is a region scoped service so another app runner needs to be setup during cross region deployment
+
+## AWS Wavelength
+
 AWS Wavelength is 5G optimized edge compute solution
 
-AWS Batch in the back end, runs jobs using ECS, EKS, or Fargate (Batch tasks need to have correct IAM Role). 
-Batch Managed Compute Environment: You can select an option of running jobs on On-Demand Instances or spot instances to reduce costs. - in VPC
-AWS Batch Multi Node Mode is good for large scale HPC
-Leverage multiple EC2 instances at same time, good for tightly coupled workflow where multiple instances need to be active at same time.
-1 main node and many child node, doesn't work with spot instances for now. Works even better with EC2 cluster placement group
+Wavelength is used to give ultra low latency to applications through 5G networks by deploying applications on 5G edge networks
+
+The edge networks are wavelength zones and those can be linked with aws region
+
+## AWS QuickSight
 
 QuickSight is serverless pay per use service. Mainly used for Business Intelligence
+
 It uses SPICE in memory cache and AutoGraph supplies best fit graphs for given set of data
+
 Accessible from web browsers or mobile applications
+
 Creates hybrid datasets from multiple sources
+
 Can leverage ML for NLP queries and automated insights
+
 Supports a number of third party data sources
+
 Also supports aws services which are supported by aws glue
 
-ElasticSearch is now OpenSearch: It is mostly a search engine/analytics tool and an open source alternative to AWS services. It is not serverless and runs inside a VPC
-Sometimes referred to as ELK Stack
-OpenSearch is an open source fork of ElasticSearch used for log search and analytics
-Not serverless, needs to run on servers. Must specify instance types, multi-AZ, etc
-Once OpenSearch has access to your logs, it can visualize, search, and analyze data in real time
-Allows more advanced querying at cheaper cost than cloudwatch and also provides indexing capabilities
-If we have Many accounts delivering messages, logs, configs or documents to a centralized account. Using opensearch on that account is a good idea.
-Opensearch can be used to create a search function for your application using AWS CDK
-Opensearch can be used with QuickSight for analytics
-Want to migrate kibana or elasticsearch, use opensearch
-OpenSearch Service allows you to store and search the semi-structured JSON data. It also has tools to create dashboards and visualizations.
+SPICE is an in-memory computation engine which works only with data imported into QuickSight
 
-Cloudformation StackSets can assume execution role in member accounts and deploy stacks and identical rules across all accounts and regions
+QuickSight has users and groups only available in QuickSight and this is not IAM
+
+A Dashboard is a read-only snapshot of an analysis that you can share, it preserves configuration of analysis
+
+A dashboard can be shared with users and groups in quicksight
+
+## AWS OpenSearch
+
+ElasticSearch is now OpenSearch: It is mostly a search engine/analytics tool and an open source alternative to AWS services. It is not serverless and runs inside a VPC
+
+Sometimes referred to as ELK Stack
+
+OpenSearch is an open source fork of ElasticSearch used for log search and analytics
+
+Not serverless, needs to run on servers. Must specify instance types, multi-AZ, etc
+
+Once OpenSearch has access to your logs, it can visualize, search, and analyze data in real time
+
+Allows more advanced querying at cheaper cost than cloudwatch and also provides indexing capabilities
+
+If we have Many accounts delivering messages, logs, configs or documents to a centralized account. Using opensearch on that account is a good idea
+
+Opensearch can be used to create a search function for your application using AWS CDK
+
+Opensearch can be used with QuickSight for analytics
+
+Want to migrate kibana or elasticsearch, use opensearch
+
+OpenSearch Service allows you to store and search the semi-structured JSON data. It also has tools to create dashboards and visualizations
+
+## AWS Control Tower
+
 AWS Control Tower uses cloudformation stacksets behind the scenes
-AWS Control tower is an easy way to setup and govern compliant multi-account aws environment and it runs on top of aws organizations.
+
+AWS Control tower is an easy way to setup and govern compliant multi-account aws environment and it runs on top of aws organizations
+
 It automatically sets up aws organizations to organize accounts and implement SCPs
-AWS Control Tower can be used to set up and manage multiple AWS accounts. However, it will not automatically provision IAM permissions for all member accounts.
+
+AWS Control Tower can be used to set up and manage multiple AWS accounts. However, it will not automatically provision IAM permissions for all member accounts
 
 AWS Control Tower - Account Factory
-Automates account provisioning and deployments. Enables to create pre-approved baselines and configs for aws accounts
+* Automates account provisioning and deployments. Enables to create pre-approved baselines and configs for aws accounts
 
 AWS Control Tower - Guardrails
-Provides ongoing governance for your control tower environment
+* Provides ongoing governance for your control tower environment
 	Preventive - uses SCPs
 	Detective - uses AWS Config
 
-AWS Service Catalog is used to Create and govern a curated list of aws products to allow users to provision resources without having full access to those resources
-These Portfolios of approved products can be shared across accounts or organization
+## IoT Landscape
+Device Connection
+* AWS IoT Core
+* AWS IoT 1-Click
+* AWS IoT Events
+* AWS IoT Greengrass
+* AWS IoT Things Graph
+Device Management 
+* AWS IoT Device Management
+* AWS IoT Device Defender
+Analytics and Visibility
+* AWS IoT Analytics
+* AWS IoT Sitewise
 
-IoT Landscape
-	Device Connection
-		AWS IoT Core
-		AWS IoT 1-Click
-		AWS IoT Events
-		AWS IoT Greengrass
-		AWS IoT Things Graph
-	Device Management 
-		AWS IoT Device Management
-		AWS IoT Device Defender
-	Analytics and Visibility
-		AWS IoT Analytics
-		AWS IoT Sitewise
+AWS IoT Core lets you connect billions of IoT devices and route trillions of messages to AWS services without managing infrastructure
 
-AWS IoT Core lets you connect billions of IoT devices and route trillions of messages to AWS services without managing infrastructure. 
 AWS IoT Core often uses MQTT (Message queuing Telemetry Transport) Protocol to transfer messages between IoT devices
+
 You can chose between these communication protocols. MQTT, HTTPS, MQTT over WSS, and LoRaWAN
+
 Ingest/Publish messages to and from IoT devices
+
 Enable connection to and from AWS Services like S3, Lambda, etc
 
 AWS IoT Events triggers alerts when events occur
+
 Monitor sensor data from your IoT device and trigger events
 
 AWS IoT 1-click can directly trigger lambda with 1-click compatible IoT devices
+
 Compatible devices are preprovisioned with certificates for secure access
+
 Can be used to manage and group 1-click devices
 
 AWS IoT Things Graphs Allows you to design low code logical workflows for your IoT devices
+
 Similar to Step Functions for IoT devices
 
 IoT device management is a device registry used to manage IoT devices at scale and can be used to send OTA updates to devices
@@ -951,296 +1225,244 @@ IoT device management is a device registry used to manage IoT devices at scale a
 IoT device defender uses ML for anomaly detection to publish alerts in response to device behavior
 
 IoT Analytics is used to develop reports from time-series data
+
 Aggregate messages from IoT devices at scale and store them in time-series format
+
 Build reports based on standard SQL queries or ML analysis insights, can be paired with quicksight
 
 IoT Sitewise is an edge software installed in edge datacenter (out of reach of aws network) to monitor IoT devices without internet
 
-AWS IoT Greengrass is a client software which manages deployment of new or legacy apps across fleets using any language, packaging technology, or runtime.
-Manage and operate device fleets in the field locally or remotely using MQTT or other protocols.
-Collect, aggregate, filter, and send data locally. Manage and control what data goes to the cloud for optimized analytics and storage.
-Bring intelligence to edge devices, such as for anomaly detection in precision agriculture or powering autonomous devices.
+AWS IoT Greengrass is a client software which manages deployment of new or legacy apps across fleets using any language, packaging technology, or runtime
+
+Manage and operate device fleets in the field locally or remotely using MQTT or other protocols
+
+Collect, aggregate, filter, and send data locally. Manage and control what data goes to the cloud for optimized analytics and storage
+
+Bring intelligence to edge devices, such as for anomaly detection in precision agriculture or powering autonomous devices
+
+## AWS Budgets
 
 Cost and Usage Reports can be used to generate CSV files to track costs by account, service or tags
-With consolidated billing enabled, track spending costs across your organization from the management account
+
+With consolidated billing enabled in Organizations, track spending costs across your organization from the management account
+
 Granularity can be adjusted to hourly, daily or monthly
+
 Reports can be stored to S3 for further analysis by other services
 
 Customized budget alerts can be created by triggering a sns topic which invokes a lambda fuction which in turn invokes another lambda function in account which has exceeded budget and shutdown the high cost resource
 
-The use of AssumeRoleWithWebIdentity is only for Web Identity Federation (Facebook, Google, and other social logins). AWS does not recommend this anymore, Amazon Cognito is recommended
-Web Identity Federation is used with public identity providers such as Facebook, Google, etc.
-
-Oracle RAC is not supported by RDS
+## ElastiCache
 
 ElastiCache can be used between on prem and aws services to cache data for faster communication and delivery
 
-S3 sync feature is available in AWS CLI using which you can sync data to S3, without manually uploading objects to S3 
-Remember that the sync feature of S3 only uploads the “delta” or in other words, the “difference” in the subset, it is better for migration tasks with time constraint. Sync can be done days before and then consecutive sync tasks will take fraction of time.
+Elasticache use cases:
+* User Session Store
+* Lazy Loading RDS queries
 
-Amazon Rekognition can store information about detected faces in server-side containers known as collections. You can use the facial information that’s stored in a collection to search for known faces in images, stored videos, and streaming videos. Amazon Rekognition supports the IndexFaces operation. You can use this operation to detect faces in an image and persist information about facial features that are detected in a collection.
+## AWS Single Sign-on (SSO) or IAM Identity Center
 
-When assuming a role to access a resource in account B, the user gives up all access privileges of its role in account A. If question asks user to use multiple resources in both accounts, it is better to opt for resource based policy instead
+The use of AssumeRoleWithWebIdentity is only for Web Identity Federation (Facebook, Google, and other social logins). AWS does not recommend this anymore, Amazon Cognito is recommended
 
-IAM Permission Boundaries is an advanced feature to use a managed policy to set the maximum permissions an IAM entity can get
-Used to allow developers to self-assign policies and manage their own permissions while making sure they can't escalate their privileges
-useful to restrict one specific user instead of whole account using organizations and SCP
-
-IAM Access Analyser is used to find out which resources are accessed externally. Works on S3, IAM Roles, KMS Keys, Lambda, Layers, SQS, Secrets Manager Secrets
-You define a zone of trust and anything outside the zone of trust is IAM Access Analyser findings
-IAM Access Analyzer can generate policy based on access activity, it reviews cloudtrail logs for upto 90 days and then writes access policies for calls made.
-
-Conditions in IAM policies can be used for conditional access.
-e.g only let users with MFA access a specific resource
-e.g only let users access a particular tagged resource
-
-External ID is important thing while sharing resources with third parties. External ID is a secret between you and third party which you need to define. It requires third party to have an aws account ID.
-
-Amazon cognito replaces token vending machine (TVM)
-
-Organization account access role is automatically created when a management account in OU creates a member account using aws Organizations API. That role is assumed everytime the management account performs any tasks on new account.
-
-AWS Organizations
-	Consolidated Billing feature
-		Consolidated billing across all accounts
-	All Features
-		Ability to apply SCP so members cannot leave orgs
-		Can't go back to consolidated billing once opted for it
-
-SCP does not apply to (First account/root OU) management account, it is a master account with full access.
+Web Identity Federation is used with public identity providers such as Facebook, Google, etc.
 
 AWS SSO is new managed way of identity federation and recommended by aws
-AWS SSO can have only one identity provider at a time. It can be SSO itself or Microsoft AD or External Identity Provider.
+
+AWS SSO can have only one identity provider at a time. It can be SSO itself or Microsoft AD or External Identity Provider
+
 AWS IAM Identity Center is successor to Single Sign-On, just a rename of service
-AWS IAM Identity Center supports single sign-on to business applications through web browsers only.
+
+AWS IAM Identity Center supports single sign-on to business applications through web browsers only
+
 AWS IAM Identity Center supports only SAML 2.0–based applications
-AWS IAM Identity Center uses permission sets to assign access.
+
+AWS IAM Identity Center uses permission sets to assign access
+
+## Permission Sets
+
 Permission sets are a collection of one or more IAM Policies
+
 You don't neet to create any assumed roles, permission sets do that automatically behind the scenes
 
-Cloudtrail events are stored for 90 days by default. Log them to S3 and use athena to analyse older logs
-Cloudtrail insights is a paid service which analyses unusual activity in your account.
-Don't confuse with guardduty. This is for unusual API activity within aws accounts where as guardduty checks for compromised services/instances by checking vpc flow logs, dns logs, etc
+## Cloud HSM
 
-Cloudtrail may take upto 15 minutes to deliver an event
-
-Use cloud HSM if question asks FIPS 140-2 Level 3 validation. KMS is level 2
-
-Parameter policies are only for advanced parameter store and they allow parameters to have an expiration date
-
-There's no way to share secret from secrets manager using resource access manager. Instead use resource based policy on secret.
-
-Cloudtrail cannot track queries made to rds
-RDS provides Transparent Data Encryption (TDE) for Oracle and SQL Server
-
-SNI solves the problem of loading multiple SSL certs to serve multiple websites into one web server. It is newer protocol (requires client to specify hostname of target to initiate SSL handshake) and works with ALB, NLB and Cloudfront
-
-Route 53 is DNSSEC compliant
-
-Having ACM provision and renew public ssl certificates for you is free of cost. ACM loads certs on below services:
-	Load Balancers
-	Cloudfront distributions
-	APIs on API Gateways
-
-ACM is a regional service and cannot copy certs between regions unless you're using it with cloudfront.
+Use cloud HSM if question asks FIPS 140-2 Level 3 validation. KMS is level
 
 CloudHSM supports SSL acceleration where the SSL queries are offloaded to HSM and it does the computing instead of EC2 instances. Must setup a cryptographic user on cloudhsm device and make sure instances and use that user.
 
-aws:SecureTransport condition can be used in bucket policies to enforce https connections
-
-Network Firewall does not have a security group
+## Amazon Inspector
 
 Amazon Inspector works on EC2 instances, images pushed to ECR and lambda functions. It also looks at network reachability. Reports to security hub
 
-AWS Logging
-	Load balancer access logs => S3
-	Cloudtrail Logs => S3 and Cloudwatch logs
-	VPC Flow Logs => Firehose, Cloudwatch Logs, S3
-	Route 53 Access Logs => Cloudwatch Logs
-	S3 access logs => S3
-	Cloudfront Access Logs => S3
-	AWS Config => S3
-	
-GuardDuty Delegated Administrator is an account in organization which has all permissions to enable and manage guardduty across all accounts in organization. Can only be done using organization management account.
+## AWS Logging
 
-AWS Config must be enabled for security hub to work
+* Load balancer access logs => S3
+* Cloudtrail Logs => S3 and Cloudwatch logs
+* VPC Flow Logs => Firehose, Cloudwatch Logs, S3
+* Route 53 Access Logs => Cloudwatch Logs
+* S3 access logs => S3
+* Cloudfront Access Logs => S3
+* AWS Config => S3
+
+## High Performing Cluster (HPC)
 
 EC2 Enhanced Networking
-	Elastic Network Adapter (ENA) upto 100 Gbps, lower latency, higher bandwidth and most recent
-	Elastic Fabric Adapter (EFA) is improved ENA and only works for Linux. For High Performance Computing, tightly coupled workloads. It bypasses underlying linux OS to provide low latency and reliable transport.
+* Elastic Network Adapter (ENA) upto 100 Gbps, lower latency, higher bandwidth and most recent
+* Elastic Fabric Adapter (EFA) is improved ENA and only works for Linux. For High Performance Computing, tightly coupled workloads. It bypasses underlying linux OS to provide low latency and reliable transport
 
 AWS ParallelCluster is Open Source Cluster Management tool to deploy HPC on AWS. Configurable with text files and automate creation of VPC, subnet, cluster types and instance types.
 
-With a diversified Spot instance type and Spot instance draining, you can allow your ECS cluster to spawn other EC2 instance types automatically to handle the load at a very low cost. 
-Reserved instances are recommended cost-saving to RDS instances that will be running continuously for years.
+## AWS Serverless Application Model (AWS SAM)
 
-You can configure various Docker networking modes that will be used by containers in your ECS task. The valid values are none, bridge, awsvpc, and host. The default Docker network mode is bridge.
-	None: the task’s containers do not have external connectivity, and port mappings can’t be specified in the container definition.
-	Bridge: the task utilizes Docker’s built-in virtual network which runs inside each container instance.
-	Host: the task bypasses Docker’s built-in virtual network and maps container ports directly to the EC2 instance’s network interface directly. In this mode, you can’t run multiple instantiations of the same task on a single container instance when port mappings are used.
-	awsvpc: the task is allocated an elastic network interface, and you must specify a NetworkConfiguration when you create a service or run a task with the task definition. When you use this network mode in your task definitions, every task that is launched from that task definition gets its own elastic network interface (ENI) and a primary private IP address. The task networking feature simplifies container networking and gives you more control over how containerized applications communicate with each other and other services within your VPCs.
-awsvpc is default mode for fargate tasks
+The AWS Serverless Application Model (AWS SAM) is an extension of cloudformation
 
-Use Amazon Cognito Identity Pools for mobile apps
+It is an open-source framework that you can use to build serverless applications on AWS
 
-S3 bucket events can directly trigger a lambda function without eventbridge
+It consists of the AWS SAM template specification that you use to define your serverless applications, and the AWS SAM command line interface (AWS SAM CLI) that you use to build, test, and deploy your serverless applications
 
-Field-level encryption in cloudfront allows you to securely upload user-submitted sensitive information to your web servers.
+AWS Serverless Application Repository is just a managed repository for serverless applications. This solution is incomplete as you will need other AWS tools to build and deploy your application
 
-OAI is mainly used to restrict access to objects in S3 bucket
-
-The AWS Serverless Application Model (AWS SAM) is an extension of cloudformation.
-It is an open-source framework that you can use to build serverless applications on AWS. 
-It consists of the AWS SAM template specification that you use to define your serverless applications, and the AWS SAM command line interface (AWS SAM CLI) that you use to build, test, and deploy your serverless applications.
-AWS Serverless Application Repository is just a managed repository for serverless applications. This solution is incomplete as you will need other AWS tools to build and deploy your application.
 SAM can leverage CodeDeploy and run lambda Function including traffic shifting feature
 
-ECS Anywhere is used to easily run containers on on prem servers
-ECS Container Agent and SSM agent needs to be installed on servers
-Must have stable connection to AWS Regions
-
-EKS Anywhere is also Kubernetes running on prem but here we leverage Amazon EKS Distro (Amazon's own flavour of EKS) on prem
-This does not need a connection to AWS region and just needs EKS Anywhere Installer to be run on the system
-Optionally, You can use EKS Connector to connect EKS Anywhere clusters to AWS
-You can leverage EKS console in two modes 
-	Fully Connected & Partially Disconnected
-	Fully Disconnected
+## AWS Outposts
 	
-AWS Outposts are server racks which aws sets up on prem for users.
+AWS Outposts are server racks which aws sets up on prem for users
+
 Outposts are setup and managed by aws for hybrid cloud users
+
 We can start leveraging AWS services on prem and a lot of aws services run on outposts like EC2, EBS, S3, ECS, EKS, RDS, EMR
+
 Need to setup S3 access point to leverage S3 on outposts
+
 Can also use datasync to sync buckets on outposts and aws
 
-Wavelength is used to give ultra low latency to applications through 5G networks by deploying applications on 5G edge networks
-The edge networks are wavelength zones and those can be linked with aws region
+## AWS Local Zones
 
-AWS Local Zones are similar to availability zones located near to the customer. They are extension of an AWS Region for latency sensitive applications.
+AWS Local Zones are similar to availability zones located near to the customer. They are extension of an AWS Region for latency sensitive applications
 
-Route 53 geolocation redirects traffic and does not block it. Cloudfront Georestriction can be used for blocking countries
-
-Amazon Fsx for windows can be mounted on linux instances
-FSx for lustre has seamless integration with S3, can R/W S3 as a file system
-FSx file system deployments	
-	Scratch File System
-		Temp Storage
-		Data is not Replicated
-		High Burst
-	Persistent File System
-		Replicated multi-AZ
-		Replace failed file within mins
-		
-FSx for Netapp OnTap supports compression, data deduplication
+## AWS DataSync
 	
 DataSync is replication of storages. on prem to cloud and vice versa
-On prem devices need to install an agent, aws to aws replication doesn't need any agent.
+
+On prem devices need to install an agent, aws to aws replication doesn't need any agent
+
 Replication tasks are not continuous, they can be scheduled hourly, daily, weekly
+
 Has the ability to keep file permissions and metadata which includes SMB/NFS configuration
-Want to install datasync but don't have capacity to do so? Use aws snowcone device, which comes with agent preinstalled. Run it on prem, it will pull your data, run agents and ship it back to aws to sync with storages.
 
-S3 Cross Region Replication is great for serving dynamic content and Cloudfront is great for caching Static content at edge locations 
+Want to install datasync but don't have capacity to do so? Use aws snowcone device, which comes with agent preinstalled. Run it on prem, it will pull your data, run agents and ship it back to aws to sync with storages
 
-Resources serving as origin for cloudfront should be PUBLIC. 
-To prevent users from directly accessing exposed cloudfront origin, use custom HTTP headers and only let the services respond to requests with header sent by cloudfront.
-You can also use security groups to only allow requests from cloudfront to prevent public access
-Cloudfront has origin groups for origin failover (primary/secondary) which can be cross region
-Cloudfront can also check response from origin and accordingly cache and display error web pages
+## Cloudfront Functions
 
-Lambda@Edge can only change request and response at edge locations, it doesn't cache
-Use Cases of Lambda@Edge:
-	Manipulate HTTP requests and response
-	Implement request filtering before reaching your application
-	User authentication and authorization
-	Generate HTTP responses at edge
-	A/B Testing
-	Bot mitigation at edge
+Cloudfront functions are lightweight functions written in Javascript with sub ms startup times. Max execution time is <1ms. Lambda@Edge has 5s viewer triggered-30s origin triggered
 
-Cloudfront functions are lightweight functions written in Javascript with sub ms startup times. Max execution time is <1ms. Lambda@Edge has 5s viewer triggered-30s origin triggered.
-Can do very quick time sensitive transformations. Cannot call external services from cloudfront, just transformations.
+Can do very quick time sensitive transformations. Cannot call external services from cloudfront, just transformations
+
 Cloudfront functions are deployed at very edge (nearest to client), Lambda@Edge is deployed at regional edge
+
 Cloudfront functions can be used with Lambda@Edge
 
 Lambda@Edge can be used to route cloudfront caching to nearest origin and pull data in cache from nearest region
 
-Elasticache use cases:
-	User Session Store
-	Lazy Loading RDS queries
+## Step Functions
 
 Step Functions are used to build serverless workflow to orchestrate lambda functions
+
 Synchronous invoking of lambda function, run a batch job, run an ECS Task and wait for it to complete, insert an item into DynamoDB, publish messages to SNS, SQS, Launch EMR, Glue, Sagemaker Jobs, launch another Step Function Workflow... 
+
 AWS SDK Integrations with access over 200 aws services from State Machine, can be invoked by Lambda, API Gateway, CLI, EventBridge, CodePipeline and Step Functions itself
+
 Max execution time is 1 year for standard workflow and 5 mins for express workflow. Standard Workflows were expensive and express workflow is the cheaper, faster variant
-Express workflows can be synchronous and asynchronous.
-	Synchronous: Wait for function calls to complete and return the result
-	Asynchronous: Doesn't wait for workflow to complete. It is useful for workflows that don't need an immediate response
+
+Express workflows can be synchronous and asynchronous
+* Synchronous: Wait for function calls to complete and return the result
+* Asynchronous: Doesn't wait for workflow to complete. It is useful for workflows that don't need an immediate response
+
 Possibility to implement human approval feature
+
 Chaining Lambda with Step Functions will introduce latency between API calls
+
 Step Functions does not integrate natively with AWS Mechanical Turk, best way to do that us use SWF
+
 Step Functions also support error handling. Use case: retry on failure
 
+## Amazon Simple Queue Service (SQS)
+
 SQS can handle message size of max 256KB, Kinesis data streams can do upto 1MB (Use pointer to S3 for large messages)
+
 SQS is often used as a buffer to avoid throttling issue
+
 SQS FIFO preserves the order of messages but have constraints of 300 messages/s without batching, 3000 /s with batching
+
 When a consumer fails to process a message within the Visibility Timeout, the message goes back into the queue. We can set a threshold on how many times a message can get into the queue
+
 After maximumReceives threshold is exceeded, the message goes to another queue called Dead Letter Queue (DLQ). DLQ are useful for debugging. DLQ of FIFO queue must also be FIFO queue and same goes for standard queue
+
 DLQ has a Redrive to source feature where when our code is fixed, the messages in DLQ can be sent back to source SQS for processing
 
+SQS cannot be used as direct input to step functions
+
+## Simple Notification Service (SNS)
+
 SNS also has FIFO Topic but subscribers for it can only be SQS FIFO queues
+
 SNS also supports message filtering. It is a JSON policy for filtering messages and accordingly send relevant messages to relevant subscribers
-SNS can be paired with SQS if we want same message to be pushed to multiple SQS queues. Make all SQS queues as subscriber for SNS topic and that message will be added to all SQS queues.
+
+SNS can be paired with SQS if we want same message to be pushed to multiple SQS queues. Make all SQS queues as subscriber for SNS topic and that message will be added to all SQS queues
+
 Use Cases:
-	If you want to send same S3 event to many SQS queues, use fan out pattern, subscribe that S3 event to an SNS Topic and publish it to SQS queues, lambda, etc at once for further processing
+* If you want to send same S3 event to many SQS queues, use fan out pattern, subscribe that S3 event to an SNS Topic and publish it to SQS queues, lambda, etc at once for further processing
+
 SNS also supports custom delivery policies for failure retries on custon endpoints and other customizations
+
 After exhausting the delivery policy, messages that haven't been delivered are discarded unless you set a SNS - dead letter queue (DLQ)
+
 DLQ are SQS/SQS FIFO queues attached to a subscription rather than a topic
-
-Managed Service for Apacke Kafka (MSK) is alternative to Kinesis. You can deploy your kafka cluster in your VPC with Multi Az upto 3 for HA
-Data is stored in EBS volumes for as long as you want.
-Also has MSK Serverless, you run kafka on MSK without stressing about capacity, instances, etc
-Kinesis has 1MB message limit, MSK defaults to 1MB but can be set to high, like 10MB
-
-EMR Supports auto scaling with cloudwatch
-EMR has EMRFS, a native integration with S3 to store data. EMR will be faster on EBS (HDFS) but if you want something durable and multi AZ, S3 is an option.
-EMR can access dynamoDB using HIVE
-	Master Node: Manage Health checks and coordinate
-	Core Node: Run tasks and store data
-	Task Node: Just to run tasks - usually Spot
-Instance Fleet (Mixed instance types and purchasing options) does not have Auto Scaling
-
-GLue Data Catalog is a catalog of datasets which has a glue data crawler which will look into all databases or any JDBC compatible database and write metadata into data catalog
-All services rely of glue data catalog to pull data like Athena, EMR, Redshift, etc
-
-Redshift (must provision servers) can be configured to automatically copy snapshots of a cluster to another region. 
-Snapshot copy grant needs to be setup between regions for redshift clusters to seamlessly copy encrypted snapshots.
-Redshift spectrum (serverless) enables to query data from S3 without loading it. Must have a redshift cluster available to start query
-Reshift Workload Management (WLM) enables you to flexibly manage queries' priorities within workloads
-	Automatic WLM: Managed by Redshift
-	Manual WLM: Managed by User
-Redshift concurrency scaling (Concurrency Scaling Clusters) enables you to provide consistently fast performance with virtually unlimited concurrent users and queries
-
-Athena Performance Improvements:
-	Use columner data for cost savings (Apache Parquet or ORC recommended)
-	Use Glue to convert data to Parquet or ORC
-	Compress data for smaller retrievals
-	Partition data in amazon S3 for easy querying on virtual columns
-	Use bigger files to minimize overhead (>128 MB), larger files are easier to scan and retrieve
-
-Athena Federated Query allows you to query data from anywhere, not just S3. It can be relational, non relational, custom data sources, object, etc (AWS and on prem)
-It uses data source connectors which is a lambda function to run federated queries (One Lambda Function per data source connector)
-
-SPICE is an in-memory computation engine which works only with data imported into QuickSight
-QuickSight has users and groups only available in QuickSight and this is not IAM
-A Dashboard is a read-only snapshot of an analysis that you can share, it preserves configuration of analysis
-A dashboard can be shared with users and groups in quicksight
 
 SNS Mobile Push is used to send push notifs directly to mobile apps
 
-When Versioning feature is enabled in S3, it causes all of the existing files to have a Version ID of null
+## Managed Service for Apacke Kafka (MSK)
+
+Managed Service for Apacke Kafka (MSK) is alternative to Kinesis. You can deploy your kafka cluster in your VPC with Multi Az upto 3 for HA
+
+Data is stored in EBS volumes for as long as you want
+
+Also has MSK Serverless, you run kafka on MSK without stressing about capacity, instances, etc
+
+Kinesis has 1MB message limit, MSK defaults to 1MB but can be set to high, like 10MB
+
+## Amazon Elastic Map Reduce (EMR)
+
+EMR Supports auto scaling with cloudwatch
+
+EMR has EMRFS, a native integration with S3 to store data. EMR will be faster on EBS (HDFS) but if you want something durable and multi AZ, S3 is an option
+
+EMR can access dynamoDB using HIVE
+* Master Node: Manage Health checks and coordinate
+* Core Node: Run tasks and store data
+* Task Node: Just to run tasks - usually Spot
+
+## Lambda Functions
 
 There are two types of concurrency available for lambda function:
-	Reserved concurrency – Reserved concurrency creates a pool of requests that can only be used by its function, and also prevents its function from using unreserved concurrency.
-	Provisioned concurrency – Provisioned concurrency initializes a requested number of execution environments so that they are prepared to respond to your function’s invocations.
+	* Reserved concurrency – Reserved concurrency creates a pool of requests that can only be used by its function, and also prevents its function from using unreserved concurrency.
+	* Provisioned concurrency – Provisioned concurrency initializes a requested number of execution environments so that they are prepared to respond to your function’s invocations.
+ 
 These can help limit the number of concurrently invoked lambda functions thus avoiding overwhelmed consumer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 SCPs don't grant any permissions, they are only used to restrict access. Use IAM Policies/Permissions to grant access.
 
@@ -1381,17 +1603,13 @@ Traffic Mirroring is an Amazon VPC feature that you can use to copy network traf
 Redshift cluster snapshots can be easily copied by enabline cross-region snapshots
 Set up a snapshot copy grant for a master key in the destination region if snapshots are encrypted by KMS
 
-SSE-S3 key is managed and rotated by aws
-SSE-KMS key AWS manage the data key but you manage the customer master key (CMK) in AWS KMS
-SSE-C requires that you manage the encryption key
 
-S3 allows you to apply a policy to enforce https connections only
 
 Tag Editor allows bulk tagging to easily tag your AWS resources
 
 SQS can also be used to decouple application layer and RDS layer and store database writes. Lambda Function can then be implemented to pull from SQS and write to DB
 
-Instance meta-data and user-data locations
+## Instance meta-data and user-data locations
 	http://169.254.169.254/latest/meta-data
 	http://169.254.169.254/latest/user-data/
 
@@ -1406,38 +1624,28 @@ EC2Rescue can help you diagnose and troubleshoot problems on Amazon EC2 Linux an
 
 when using the AD connector for SSO, you cannot use both on-premises AD and third-party integrations at the same time.
 
-Amazon RDS Proxy sits between your application and your relational database to efficiently manage connections to the database and improve the scalability of the application. Amazon RDS Proxy can be enabled for most applications with no code changes.
 
-CodeArtifact is only for store, publish and share artifacts. It does not allow the user to configure custom actions or scripts to perform unit tests on artifacts. It is recommended to use AWS CodeBuild for this scenario.
+
+## AWS License Manager
 
 AWS License Manager is used to create customized licensing rules that emulate the terms of their licensing agreements, and then enforce these rules. It is not used for storing software licenses.
 
-You cannot set Auto Scaling for the master database on Amazon Aurora. You need to Create an Aurora Replica and enable Aurora Auto Scaling for the replica.
+## Amazon Keyspaces
 
-Amazon Keyspaces (for Apache Cassandra) is a scalable, highly available, and managed Apache Cassandra–compatible database service.
+Amazon Keyspaces (for Apache Cassandra) is a scalable, highly available, and managed Apache Cassandra–compatible database service
 
-SQS cannot be used as direct input to step functions
-Fargate tasks cannot be invoked by eventbridge
-
-IAM securely encrypts your private keys and stores the encrypted version in IAM SSL certificate storage.
-
-For customer managed S3 SSE-C encryption,
-For Amazon S3 REST API calls, you have to include the following HTTP Request Headers:
-	x-amz-server-side-encryption-customer-algorithm
-	x-amz-server-side-encryption-customer-key
-	x-amz-server-side-encryption-customer-key-MD5 
-For presigned URLs, you should specify the algorithm using the x-amz-server-side-encryption-customer-algorithm request header.
-
-Set up AWS Organizations by sending an invitation to all member accounts of the company from the master account of your organization. 
-Create an OrganizationAccountAccessRole IAM role in the member account and grant permission to the master account to assume the role.
-
-CI/CD Pipeline (CodePipeline)
+## CI/CD Pipeline (CodePipeline)
 
 Code(CodeCommit/Github) --> Build(CodeBuild/Jenkins CI) --> Test(CodeBuild/Jenkins CI) --> Deploy(CodeDeploy/Elastic Beanstalk) --> Provision(Elastic Beanstalk/Cloudformation)
 
 CodeCommit push can trigger a lambda function which can do things like scan for leaked aws creds and disable accounts as a remedy
+
 CodePipeline can have manual approval stage
+
 Automatically build and store docker images using CodeBuild+ECR
+
 CodePipeline can also do automated cloudformation deployments
+
 CodePipeline also has Github integrations where github can trigger http webhook and codepipeline runs (Version 1)
+
 Integration now has a new version where CodePipeline and Github are linked together with CodeStar Source Connection (Github App)
