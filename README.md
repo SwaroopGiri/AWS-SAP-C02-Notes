@@ -49,6 +49,11 @@ For Amazon S3 REST API calls, you have to include the following HTTP Request Hea
 * x-amz-server-side-encryption-customer-algorithm
 * x-amz-server-side-encryption-customer-key
 * x-amz-server-side-encryption-customer-key-MD5 
+
+Server-side encryption with Amazon S3-managed encryption keys (SSE-S3) uses strong multi-factor encryption. Amazon S3 encrypts each object with a unique key. 
+As an additional safeguard, it encrypts the key itself with a master key that it rotates regularly. Amazon S3 server-side encryption uses one of the strongest block ciphers available, 256-bit Advanced Encryption Standard (AES-256), to encrypt your data
+
+The signed cookies feature is primarily used if you want to provide access to multiple restricted files
  
 For presigned URLs, you should specify the algorithm using the x-amz-server-side-encryption-customer-algorithm request header.
 
@@ -74,7 +79,15 @@ S3 bucket events can directly trigger a lambda function without eventbridge
 
 Origin Access Identity is mainly used to restrict access to objects in S3 bucket and only allow access from cloudfront
 
+You can’t directly configure a bucket ACL to allow access from Amazon CloudFront only. You will need an origin access identity (OAI) for this setup
+
+Create a special CloudFront user called an origin access identity (OAI) and associate it with your distribution. Configure the S3 bucket policy to only access from the OAI
+
 When Versioning feature is enabled in S3, it causes all of the existing files to have a Version ID of null
+
+If you want to optimize performance when uploading large files to Amazon S3, it is recommended to use Amazon S3 Transfer Acceleration which can provide fast and secure transfers over long distances
+
+S3 can be used as a file system by using file gateway appliance in VPC and attaching it to EC2. The same gateway appliance can also be used as a read-only replica
 
 ### Glacier
 
@@ -149,6 +162,12 @@ Storage Gateway has different modes
  
 Used for cloud migration. Setup volume gateway stored mode to sync data to S3 and then switch over to cached mode because most of data is stored to S3.
 
+Storage Gateway-Cached volumes can support volumes of 1,024TB in size, whereas Gateway-stored volume supports volumes of 512 TB size
+
+Storage Gateway Hardware Appliance can be used when on prem virtualization is not possible. Buy it from amazon.com and set it up in your infrastructure
+
+Storage Gateway does not directly work with glacier or glacier deep archive. Lifecycle policies can be setup on the bucket instead
+
 ## RDS
 
 In occassions where database isn't supported by RDS, you can run a database on EC2.
@@ -176,6 +195,8 @@ RDS provides Transparent Data Encryption (TDE) for Oracle and SQL Server
 Reserved instances are recommended cost-saving to RDS instances that will be running continuously for years
 
 Amazon RDS Proxy sits between your application and your relational database to efficiently manage connections to the database and improve the scalability of the application. Amazon RDS Proxy can be enabled for most applications with no code changes
+
+When automatic failover occurs in Multi-AZ database, The CNAME record for your DB instance will be altered to point to the newly promoted standby
 
 ## Types of Data
 
@@ -268,6 +289,16 @@ In a VPC with CIDR ..0.0/24 , the following five IP addresses are reserved:
 
 There can only be one Virtual GateWay attached to a VPC at a given time
 
+NACLs cannot filter requests based on URLs
+
+A security group cannot filter requests based on URLs
+
+You can use a forward web proxy server in your VPC and manage outbound access using URL-based rules. Default routes are also removed
+
+VPC Endpoint allows you to access an aws service privately within same VPC but it does not allow cross region access
+
+Traffic Mirroring is an Amazon VPC feature that you can use to copy network traffic from an elastic network interface of Amazon EC2 instances. You can then send the traffic to out-of-band security and monitoring appliances
+
 ## NAT Gateway
 
 NAT instance has lower cost than NAT Gateway but comes with overhead of instance maintenance. AWS recommends NAT Gateway
@@ -304,6 +335,8 @@ For mobile apps, AWS recommends using the Cognito SDK for managing temporary cre
 
 Use Amazon Cognito Identity Pools for mobile apps
 
+Usually, mobile applications do not have complicated table relationships hence, it is recommended to use a NoSQL database like DynamoDB
+
 OAuth 2.0 is the industry-standard protocol for authorization.
 
 When assuming a role to access a resource in account B, the user gives up all access privileges of its role in account A. If question asks user to use multiple resources in both accounts, it is better to opt for resource based policy instead
@@ -331,6 +364,12 @@ External ID is important thing while sharing resources with third parties. Exter
 Amazon cognito replaces token vending machine (TVM)
 
 IAM can securely encrypt your private keys and stores the encrypted version in IAM SSL certificate storage
+
+PowerUserAccess if you have users who perform application development tasks. This policy will enable them to create and configure resources and services that support AWS aware application development
+
+grants IAM permissions to create a service-linked role
+
+It also grants Organizations permissions to view information about the user’s organization, including the master account email and organization limitations.
 
 ## AWS Organizations
 
@@ -405,6 +444,10 @@ Cloudfront has origin groups for origin failover (primary/secondary) which can b
 
 Cloudfront can also check response from origin and accordingly cache and display error web pages
 
+Although CloudFront supports content uploads via POST, PUT, and other HTTP Methods, there is a limited connection timeout to the origin (60 seconds). If uploads take several minutes, the connection might get terminated
+
+Default cloudfront SSL certificate only works for (*.cloudfront.net) domains. ACM is preferred for custom domains
+
 ## Cloudtrail
 
 You can configure CloudTrail to deliver log files from multiple regions to a single S3 bucket for a single account.
@@ -424,6 +467,8 @@ Cloudtrail cannot track queries made to rds
 ## Application Migration Service (MGN) or Server Migration Service (SMS)
 
 Server migration connector is downloaded as a virtual appliance into on-prem vSphere or Hyper-V setup
+
+AWS Application Migration Service is same as CloudEndure Migration or Server Migration Service (SMS)
 
 ## Database Migration Service (DMS) and Schema Conversion Tool (SCT)
 	
@@ -474,6 +519,8 @@ Kinesis Consumer Enhanced Fan-Out Model:
 * 2MB/s read Per Shard, per enhanced consumer. (No API Calls needed, push based service)
 
 Default limit is 500 shards, can be increased to unlimited. Shard capacity can be on-demand (expensive) or pre provisioned
+
+Kinesis Data Streams will throw throughput exception if messages exceed limit of 1MB/s per shard
 
 ## Kinesis Data Firehose
 
@@ -535,6 +582,10 @@ Reshift Workload Management (WLM) enables you to flexibly manage queries' priori
 
 Redshift concurrency scaling (Concurrency Scaling Clusters) enables you to provide consistently fast performance with virtually unlimited concurrent users and queries
 
+Redshift cluster snapshots can be easily copied by enabline cross-region snapshots
+
+Set up a snapshot copy grant for a master key in the destination region if snapshots are encrypted by KMS
+
 ## AWS CloudFormation
 
 Change Sets can allow you to preview changes to a CloudFormation stack before they are applied. Make use of change sets after updating cloudformation template to identify potential trouble spots
@@ -558,6 +609,16 @@ The "Snapshot" value ensures that a snapshot is created before the CloudFormatio
 The "Retain" value is incorrect as it keeps the volume rather than creates a snapshot
 
 Cloudformation StackSets can assume execution role in member accounts and deploy stacks and identical rules across all accounts and regions
+
+AWS::RDS::DBCluster has default delete policy of "Snapshot"
+
+Cloudformation custom resource is created whenever you need to do something which is not supported by cloudformation. Custom Resource invokes lambda function in back end and that function can do jobs not supported by cloudformation.
+
+If cloudformation resources are changed after they're deployed, we call it drift
+
+Cloudformation Drift is used to check if resources have drifted
+
+Cloudformation can import resource and you don't need to recreate resource from cloudformation stack for it
 
 ## AWS OpsWorks
 
@@ -713,19 +774,19 @@ VPC Flow Logs can capture IP traffic information going to and from network inter
 Route 53 geolocation redirects traffic and does not block it. Cloudfront Georestriction can be used for blocking countries
 
 Route 53 supports:
-	A (address record)
-	AAAA (IPv6 address record)
-	CNAME (canonical name record) Only for non root domain e.g something.company.com
-	CAA (certification authority authorization)
-	MX (mail exchange record)
-	NAPTR (name authority pointer record)
-	NS (name server record)
-	PTR (pointer record)
-	SOA (start of authority record)
-	SPF (sender policy framework)
-	SRV (service locator)
-	TXT (text record)
-	Amazon Route 53 also offers alias records
+* A (address record)
+* AAAA (IPv6 address record)
+* CNAME (canonical name record) Only for non root domain e.g something.company.com
+* CAA (certification authority authorization)
+* MX (mail exchange record)
+* NAPTR (name authority pointer record)
+* NS (name server record)
+* PTR (pointer record)
+* SOA (start of authority record)
+* SPF (sender policy framework)
+* SRV (service locator)
+* TXT (text record)
+* Amazon Route 53 also offers alias records
 
 ## Deployment Strategies
 
@@ -740,6 +801,16 @@ blue/green: a new environment is created from scratch (so another load balancer)
 The main difference is that in the immutable update, the new instances serve traffic alongside the old ones, while in the blue/green this doesn't happen (you have an instant complete switch from old to new).
 
 All-at-once deployment means all traffic is shifted from the original environment to the replacement environment all at once. All at Once deployment offers the shortest deployment time but it will incur downtime as the instances are upgraded.
+
+Rolling with additional batch is only applicable in Elastic Beanstalk
+
+Rolling Splits the instances into batches and deploys to one batch at a time
+
+Rolling with additional batch Splits the deployments into batches but for the first batch creates new EC2 instances instead of deploying on the existing EC2 instances
+
+Immutable environment updates ensure that configuration changes that require replacing instances are applied efficiently and safely
+
+Canary deployments are preferred for lambda
 
 ## Elastic Container Service (ECS)
 
@@ -791,6 +862,10 @@ You can leverage EKS console in two modes
 * Fully Disconnected
 
 Fargate tasks cannot be invoked by eventbridge
+
+Running docker based containers on fargate is more expensive than serverless lambda functions
+
+ECR can have cross region replication similar to S3
 
 ## Continous Integration and Continuous delivery (CI/CD)
 
@@ -874,6 +949,8 @@ Service Control Policy (SCP) can restrict aws accounts from creating resources i
 
 SCP can restrict creation of untagged resources
 
+SCPs don't grant any permissions, they are only used to restrict access. Use IAM Policies/Permissions to grant access
+
 ## AWS Certificate Manager (ACM)
 
 Having ACM provision and renew public ssl certificates for you is free of cost. ACM loads certs on below services:
@@ -923,13 +1000,28 @@ Gateway Endpoints are used to send traffic to S3 and DynamoDB and do not use pri
 
 AWS PrivateLink requires that the third party service provider have an AWS account
 
-## AWS Snowball
+## AWS Snow Family
 
 With snowball devices, the staging workstation won't be able to mount the data warehouse directly
 
 Snowball Edge's onboard S3-Compatible Endpoint makes for seamless transfer from a data warehouse S3 interface, which most of the major data warehouse vendors support
 
 Hadoop data can be copied to the S3 endpoint after mounting it on a staging workstation
+
+Snow Family Improving Performance
+* perform multiple write operations at one time - from multiple terminals
+* Transfer small files in batches - zip up small files till at least 1 MB to increase transfer speed
+* Don't perform other operations on files during transfer
+* Reduce local network use
+* Eliminate unnecessary hops - direct connection preferred
+  
+Typical data transfer rate is between 25 MB/s and 40 MB/s. Use Amazon S3 Adapter for Snowball for faster speeds, between 250 MB/s and 400 MB/s
+
+DMS can use Snowball Edge and S3 to speed up migration
+* Use AWS Schema Conversion Tool to extract data locally and move it to edge device
+* Ship the device back to AWS
+* Edge device automatically loads its data into S3 bucket
+* DMS can use S3 as a source to build a database
 
 ## Amazon Rekognition
 
@@ -948,6 +1040,8 @@ The two methods that AWS recommends if you lose a private key for an EC2 key pai
 Instance Fleet (Mixed instance types and purchasing options) does not have Auto Scaling
 
 EC2Rescue can help you diagnose and troubleshoot problems on Amazon EC2 Linux and Windows Server instances. You can run the tool manually or you can run the tool automatically by using Systems Manager Automation and the AWSSupport-ExecuteEC2Rescue document
+
+Elastic Network Interface can provide multiple IP address to instance
 
 ## AWS Shield
 
@@ -1014,11 +1108,11 @@ Amazon Athena supports Apache Parquet, JSON and Apache ORC
 Athena does not support XML
 
 Athena Performance Improvements:
-	* Use columner data for cost savings (Apache Parquet or ORC recommended)
-	* Use Glue to convert data to Parquet or ORC
-	* Compress data for smaller retrievals
-	* Partition data in amazon S3 for easy querying on virtual columns
-	* Use bigger files to minimize overhead (>128 MB), larger files are easier to scan and retrieve
+* Use columner data for cost savings (Apache Parquet or ORC recommended)
+* Use Glue to convert data to Parquet or ORC
+* Compress data for smaller retrievals
+* Partition data in amazon S3 for easy querying on virtual columns
+* Use bigger files to minimize overhead (>128 MB), larger files are easier to scan and retrieve
 
 Athena Federated Query allows you to query data from anywhere, not just S3. It can be relational, non relational, custom data sources, object, etc (AWS and on prem)
 
@@ -1046,8 +1140,9 @@ Resource sharing needs to be explictly enabled by organization for it to work
 
 Most shared resources are regional and can only be accessed within same region
 
-e.g. Share single VPC infra across multiple organizations instead of networking each vpc in each account together
-	 share certificate authorities across accounts to reduct cost and complexity
+e.g. 
+* Share single VPC infra across multiple organizations instead of networking each vpc in each account together
+* share certificate authorities across accounts to reduct cost and complexity
 
 ## Secrets Manager 
 
@@ -1098,14 +1193,15 @@ Gives recommendations on Lambda, EC2, ECS Fargate, EBS and Auto Scaling Groups
 ## Container Services
 
 High Control and High Complexity to low control and low complexity
-	EKS on Container Instances
-		Requires customization to integrate with ML services like Polly, SageMaker, Batch, etc
-		Adding load balancers to container instances is difficult and requires genralized abstractions
-	ECS on Container Instances
-		Natively Integrates with most aws services
-		Seamlessly integrates with NLPs, ALBs
-	ECS Fargate
-	App Runner (Comes with lot of limitations)
+
+EKS on Container Instances
+* Requires customization to integrate with ML services like Polly, SageMaker, Batch, etc
+* Adding load balancers to container instances is difficult and requires genralized abstractions
+ECS on Container Instances
+* Natively Integrates with most aws services
+* Seamlessly integrates with NLPs, ALBs
+ECS Fargate
+App Runner (Comes with lot of limitations)
 
 ECS and EKS can run on AWS Wavelength, Fargate, EC2, Outposts and local zones
 
@@ -1413,6 +1509,8 @@ DLQ has a Redrive to source feature where when our code is fixed, the messages i
 
 SQS cannot be used as direct input to step functions
 
+SQS can also be used to decouple application layer and RDS layer and store database writes. Lambda Function can then be implemented to pull from SQS and write to DB
+
 ## Simple Notification Service (SNS)
 
 SNS also has FIFO Topic but subscribers for it can only be SQS FIFO queues
@@ -1456,169 +1554,120 @@ EMR can access dynamoDB using HIVE
 ## Lambda Functions
 
 There are two types of concurrency available for lambda function:
-	* Reserved concurrency – Reserved concurrency creates a pool of requests that can only be used by its function, and also prevents its function from using unreserved concurrency.
-	* Provisioned concurrency – Provisioned concurrency initializes a requested number of execution environments so that they are prepared to respond to your function’s invocations.
+* Reserved concurrency – Reserved concurrency creates a pool of requests that can only be used by its function, and also prevents its function from using unreserved concurrency.
+* Provisioned concurrency – Provisioned concurrency initializes a requested number of execution environments so that they are prepared to respond to your function’s invocations.
  
 These can help limit the number of concurrently invoked lambda functions thus avoiding overwhelmed consumer
 
+## Disaster Recovery
 
+* Backup and restore (RPO in hours, RTO in 24 hours or less)
+* Pilot light (RPO in minutes, RTO in hours)
+* Warm standby (RPO in seconds, RTO in minutes)
+* Multi-region (multi-site) active-active (RPO near zero, RTO potentially zero)
 
+## AWS X-Ray
 
+AWS X-Ray is used to debug production and distributed applications such as those built using a microservices architecture
 
-
-
-
-
-
-
-
-
-
-
-SCPs don't grant any permissions, they are only used to restrict access. Use IAM Policies/Permissions to grant access.
-
-Storage Gateway-Cached volumes can support volumes of 1,024TB in size, whereas Gateway-stored volume supports volumes of 512 TB size.
-
-Server-side encryption with Amazon S3-managed encryption keys (SSE-S3) uses strong multi-factor encryption. Amazon S3 encrypts each object with a unique key. 
-As an additional safeguard, it encrypts the key itself with a master key that it rotates regularly. Amazon S3 server-side encryption uses one of the strongest block ciphers available, 256-bit Advanced Encryption Standard (AES-256), to encrypt your data.
-
-The signed cookies feature is primarily used if you want to provide access to multiple restricted files
-
-NACLs cannot filter requests based on URLs.
-A security group cannot filter requests based on URLs.
-You can use a forward web proxy server in your VPC and manage outbound access using URL-based rules. Default routes are also removed.
-
-Backup and restore (RPO in hours, RTO in 24 hours or less)
-Pilot light (RPO in minutes, RTO in hours)
-Warm standby (RPO in seconds, RTO in minutes)
-Multi-region (multi-site) active-active (RPO near zero, RTO potentially zero)
-
-Usually, mobile applications do not have complicated table relationships hence, it is recommended to use a NoSQL database like DynamoDB
-
-You can’t directly configure a bucket ACL to allow access from Amazon CloudFront only. You will need an origin access identity (OAI) for this setup.
-Create a special CloudFront user called an origin access identity (OAI) and associate it with your distribution. Configure the S3 bucket policy to only access from the OAI. 
-
-AWS X-Ray is used to debug production and distributed applications such as those built using a microservices architecture.
-
-Although CloudFront supports content uploads via POST, PUT, and other HTTP Methods, there is a limited connection timeout to the origin (60 seconds). If uploads take several minutes, the connection might get terminated. 
-If you want to optimize performance when uploading large files to Amazon S3, it is recommended to use Amazon S3 Transfer Acceleration which can provide fast and secure transfers over long distances.
-
-Elastic Network Interface can provide multiple IP address to instance.
-
-When automatic failover occurs in Multi-AZ database, The CNAME record for your DB instance will be altered to point to the newly promoted standby
-
-Running docker based containers on fargate is more expensive than serverless lambda functions
-
-AWS::RDS::DBCluster has default delete policy of "Snapshot"
-
-Cloudformation custom resource is created whenever you need to do something which is not supported by cloudformation. Custom Resource invokes lambda function in back end and that function can do jobs not supported by cloudformation.
-
-If cloudformation resources are changed after they're deployed, we call it drift.
-Cloudformation Drift is used to check if resources have drifted
-Cloudformation can import resource and you don't need to recreate resource from cloudformation stack for it.
+## AWS Cloud Development Kit (CDK)
 
 AWS Cloud Development Kit (CDK) lets you to define your cloud infrastructure using familiar languages like JavaScript, Python, Java, etc
 The code is later compiled into CloudFormation Template (JSON/YAML)
 
+## Cloudmap
+
 Cloudmap is fully managed resource discovery service. Creates a map of backend services that your applications depend on. You register your application components, their locations, attributes and health status with AWS Cloud map and cloud map maps frontend with backend. Due to cloud map, New version application deployments don't require code changes
 
-Storage Gateway Hardware Appliance can be used when on prem virtualization is not possible. Buy it from amazon.com and set it up in your infrastructure.
-Storage Gateway does not directly work with glacier or glacier deep archive. Lifecycle policies can be setup on the bucket instead.
-
-S3 can be used as a file system by using file gateway appliance in VPC and attaching it to EC2. The same gateway appliance can also be used as a read-only replica.
-
-Snow Family Improving Performance
-	perform multiple write operations at one time - from multiple terminals
-	Transfer small files in batches - zip up small files till at least 1 MB to increase transfer speed
-	Don't perform other operations on files during transfer
-	Reduce local network use
-	Eliminate unnecessary hops - direct connection preferred
-Typical data transfer rate is between 25 MB/s and 40 MB/s. Use Amazon S3 Adapter for Snowball for faster speeds, between 250 MB/s and 400 MB/s
-
-DMS can use Snowball Edge and S3 to speed up migration
-	Use AWS Schema Conversion Tool to extract data locally and move it to edge device
-	Ship the device back to AWS
-	Edge device automatically loads its data into S3 bucket
-	DMS can use S3 as a source to build a database
+## AWS Cloud Adoption Readiness Tool (CART)
 
 AWS Cloud Adoption Readiness Tool (CART) asks questions across six perspectives and generates a custom report of your level of migration readiness. Transforms idea of moving to cloud into a detailed plan that follows AWS best practices.
 
+## AWS Fault Injection Simulator (FIS)
+
 AWS Fault Injection Simulator (FIS) is a fully managed service for running fault injection experiments on aws workloads. Chaos Engineering - Stressing an application by creating disruptive events (Sudden increase in CPU or memory) to test functioning under load
+
 Generate prebuilt templates to generate desired disruptions
+
+## AWS Migration Evaluator
 
 AWS Migration Evaluator helps you build a data-driven business case for migration to AWS. Install agentless colector to conduct broad-based discovery. Takes snapshot of on-premises footprint, server dependencies, etc. Analyzes and then develops migration plan.
 
+## AWS Backup
+
 AWS Backup supports cross-region backups and cross account
+
 Supports Storage Gateway (Volume Gateway)
+
 Supports tag based backup policies
+
 Transition backups to cold storage after specific period, specify backup retention period
 
 Backup Vault Lock to enforce Write Once Read Many state for all the backups that you store in AWS Backup Vault. It cannot be deleted. Provides additional layer of defense for backups. Even root user cannot delete backups in Vault Lock
 
-AWS Application Migration Service is same as CloudEndure Migration or Server Migration Service (SMS)
+## AWS Elastic Disaster Recovery
 
 AWS Elastic Disaster Recovery is used to quickly and easily recover your physical, virtual and cloud-based servers into AWS. It has continuous block-level replication for servers
 
-Comprehend - Amazon Comprehend uses natural-language processing (NLP) to help you understand the meaning and sentiment in your text.
+## Machine Learning Landscape
+
+Comprehend - Amazon Comprehend uses natural-language processing (NLP) to help you understand the meaning and sentiment in your text
+
 Kendra - Intelligent search service out of Unstructured text (e.g search something from set of PDFs)
+
 Textract - High powered OCR engine, picture to text
+
 Forecast - Analyze time-series data with other variables to deliver highly accurate forecasts
+
 Fraud Detector - Build fraud detection machine learning model which is highly customized based on your data
+
 Transcribe - real-time transcription of Audio to text (CC) (Alexa)
+
 Lex - Build conversational interfaces to understand intent and context of text. (Alexa) Build Chatbots
+
 Polly - Converts text to natural speech (Alexa)
+
 Rekognition - Image and video analysis to recognise objects, people, expressions, etc. Uses: Content Moderation using AI/ML, Hate Speech recognisiton, etc
-SageMaker - Manage Labeling jobs for training Datasets using active learning and human labeling. Has Jupyter Notebook. Train and Tune Models. Package and deploy your machine learning models at scale.
-Sagemaker NEO - Optimized Architecture Binary. Optimizes machine learning models to run on different CPU Architecture 
+
+SageMaker - Manage Labeling jobs for training Datasets using active learning and human labeling. Has Jupyter Notebook. Train and Tune Models. Package and deploy your machine learning models at scale
+
+Sagemaker NEO - Optimized Architecture Binary. Optimizes machine learning models to run on different CPU Architecture
+
 Translate - use deep learning to translate languages
+
 Personalize - Recommendation engine as a service based on demographic and behavioral data
 
-Amazon CodeGuru is an ML-Powered service for automated code reviews and application performance recommendations
-	CodeGuru Reviewer: Automated code reviews, security vulnerabilities, hard to find bugs, etc. Supports Java and Python
-	CodeGuru Profiler: Recommendations about application performance, helps understand runtime behavior of your application
+## Amazon CodeGuru
 
-Kinesis Video Streams: One video stream per device. source eg Cameras, smartphone, body camera, etc. Source are called producers, can use Kinesis Video Streams Producer Library.
-Underlying data is stored in S3 but we don't have access to it and we cannot directly output stream data to S3. Need to build custom solution for it.
-Consumed by EC2 instances for realtime analysis. Can leverage Kinesis Video Stream Parser Library to read streams.
+Amazon CodeGuru is an ML-Powered service for automated code reviews and application performance recommendations
+* CodeGuru Reviewer: Automated code reviews, security vulnerabilities, hard to find bugs, etc. Supports Java and Python
+* CodeGuru Profiler: Recommendations about application performance, helps understand runtime behavior of your application
+
+## Kinesis Video Streams
+
+Kinesis Video Streams: One video stream per device. source eg Cameras, smartphone, body camera, etc. Source are called producers, can use Kinesis Video Streams Producer Library
+
+Underlying data is stored in S3 but we don't have access to it and we cannot directly output stream data to S3. Need to build custom solution for it
+
+Consumed by EC2 instances for realtime analysis. Can leverage Kinesis Video Stream Parser Library to read streams
+
 Can have integration with Rekognition to extract metadata from video streams and send it to kinesis data streams
+
+## AWS Device Farm
 
 AWS Device Farm is application testing service for mobile and web applications. Test applications across real browsers and real mobile devices and are fully automated using framework. Automatically generates videos and logs for analysis. Can also remote into devices for debugging.
 
+## Cross-Origin Resource Sharing (CORS)
+
 CORS is a browser based security which lets browser use headers for cross origin API calls. CORS is used in places where API calls are made and not where browser pages are hosted
 
-Response code 429 is Quota Exceeded Error which means that client has done too many requests and has been throttled. This can be fixed by increasing transactions per second metric in API gateway to increase throttle limits.
-API Gateway requests time out after 29 seconds which can lead to 504 error (Integration Failure)
+## AWS Service Quotas
 
 AWS Service Quotas can be used to notify about resource utilization
 
-Kinesis Data Streams will throw throughput exception if messages exceed limit of 1MB/s per shard
-
-VPC Endpoint allows you to access an aws service privately within same VPC but it does not allow cross region access
-
-ECR can have cross region replication similar to S3
-
-Default cloudfront SSL certificate only works for (*.cloudfront.net) domains. ACM is preferred for custom domains
-
-PowerUserAccess if you have users who perform application development tasks. This policy will enable them to create and configure resources and services that support AWS aware application development.
-grants IAM permissions to create a service-linked role
-It also grants Organizations permissions to view information about the user’s organization, including the master account email and organization limitations.
-
-Rolling with additional batch is only applicable in Elastic Beanstalk
-Rolling Splits the instances into batches and deploys to one batch at a time. 
-Rolling with additional batch Splits the deployments into batches but for the first batch creates new EC2 instances instead of deploying on the existing EC2 instances.
-Immutable environment updates ensure that configuration changes that require replacing instances are applied efficiently and safely
-Canary deployments are preferred for lambda
-
-Traffic Mirroring is an Amazon VPC feature that you can use to copy network traffic from an elastic network interface of Amazon EC2 instances. You can then send the traffic to out-of-band security and monitoring appliances
-
-Redshift cluster snapshots can be easily copied by enabline cross-region snapshots
-Set up a snapshot copy grant for a master key in the destination region if snapshots are encrypted by KMS
-
-
+## Tag Editor
 
 Tag Editor allows bulk tagging to easily tag your AWS resources
-
-SQS can also be used to decouple application layer and RDS layer and store database writes. Lambda Function can then be implemented to pull from SQS and write to DB
 
 ## Instance meta-data and user-data locations
 	http://169.254.169.254/latest/meta-data
@@ -1627,6 +1676,10 @@ SQS can also be used to decouple application layer and RDS layer and store datab
 ## API Gateway
 
 API Gateway has AWS_IAM authorization feature so that only authorized IAM users can invoke API gate
+
+Response code 429 is Quota Exceeded Error which means that client has done too many requests and has been throttled. This can be fixed by increasing transactions per second metric in API gateway to increase throttle limits
+
+API Gateway requests time out after 29 seconds which can lead to 504 error (Integration Failure)
 
 ## AWS License Manager
 
@@ -1651,3 +1704,19 @@ CodePipeline can also do automated cloudformation deployments
 CodePipeline also has Github integrations where github can trigger http webhook and codepipeline runs (Version 1)
 
 Integration now has a new version where CodePipeline and Github are linked together with CodeStar Source Connection (Github App)
+
+## Extras
+
+=-------------------------------------------------------------=
+= AWS Solution Architect Professional Notes - Adrian Cantrill =
+=-------------------------------------------------------------=
+
+https://github.com/Ernyoke/certified-aws-solutions-architect-professional
+
+https://github.com/aandr26/AWS-SAP-C01-Study-Guide
+
+=---------------------------------------------------=
+= AWS Solution Architect Professional Notes - Udemy =
+=---------------------------------------------------=
+
+https://kopelman.notion.site/kopelman/da7773633cc64f018cc98356833a30f1?v=c8e0e996dd704f0ebb3053e24180c40a
