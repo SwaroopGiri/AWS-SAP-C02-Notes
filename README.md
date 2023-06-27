@@ -266,6 +266,8 @@ In a VPC with CIDR ..0.0/24 , the following five IP addresses are reserved:
 * 0.3: Reserved by AWS for future use.
 * 0.255: Network broadcast address.
 
+There can only be one Virtual GateWay attached to a VPC at a given time
+
 ## NAT Gateway
 
 NAT instance has lower cost than NAT Gateway but comes with overhead of instance maintenance. AWS recommends NAT Gateway
@@ -945,6 +947,8 @@ The two methods that AWS recommends if you lose a private key for an EC2 key pai
 
 Instance Fleet (Mixed instance types and purchasing options) does not have Auto Scaling
 
+EC2Rescue can help you diagnose and troubleshoot problems on Amazon EC2 Linux and Windows Server instances. You can run the tool manually or you can run the tool automatically by using Systems Manager Automation and the AWSSupport-ExecuteEC2Rescue document
+
 ## AWS Shield
 
 AWS Shield and other counter-measure technologies work to protect all AWS customers from DDoS attacks. Unless AWS was aware of the test time and expected duration, its likely the traffic was blocked as suspicious. Despite being a permitted service, traffic suspected of being malicious will still be blocked.
@@ -971,16 +975,21 @@ Amazon Fsx for windows can be mounted on linux instances
 
 FSx for lustre has seamless integration with S3, can R/W S3 as a file system
 
-FSx file system deployments	
-	Scratch File System
-		Temp Storage
-		Data is not Replicated
-		High Burst
-	Persistent File System
-		Replicated multi-AZ
-		Replace failed file within mins
+FSx file system deployments
+
+Scratch File System
+* Temp Storage
+* Data is not Replicated
+* High Burst
+Persistent File System
+* Replicated multi-AZ
+* Replace failed file within mins
 		
 FSx for Netapp OnTap supports compression, data deduplication
+
+There is no option to Dynamically Allocate the file system size in Fsx
+
+Workaround: Create an Amazon CloudWatch metric to monitor the FreeStorageCapacity of the file system. Write an AWS Lambda Function to increase the capacity of the Amazon FSx for Windows File Server file system using the update-file-system command. Utilize Amazon EventBridge to invoke this Lambda function when the metric threshold is reached
 
 ## Amazon Aurora
 
@@ -1277,6 +1286,8 @@ AWS IAM Identity Center supports single sign-on to business applications through
 AWS IAM Identity Center supports only SAML 2.0–based applications
 
 AWS IAM Identity Center uses permission sets to assign access
+
+when using the AD connector for SSO, you cannot use both on-premises AD and third-party integrations at the same time
 
 ## Permission Sets
 
@@ -1613,18 +1624,9 @@ SQS can also be used to decouple application layer and RDS layer and store datab
 	http://169.254.169.254/latest/meta-data
 	http://169.254.169.254/latest/user-data/
 
-API Gateway has AWS_IAM authorization feature so that only authorized IAM users can invoke API gateway
+## API Gateway
 
-There can only be one Virtual GateWay attached to a VPC at a given time.
-
-There is no option to Dynamically Allocate the file system size in Fsx
-Workaround: Create an Amazon CloudWatch metric to monitor the FreeStorageCapacity of the file system. Write an AWS Lambda Function to increase the capacity of the Amazon FSx for Windows File Server file system using the update-file-system command. Utilize Amazon EventBridge to invoke this Lambda function when the metric threshold is reached.
-
-EC2Rescue can help you diagnose and troubleshoot problems on Amazon EC2 Linux and Windows Server instances. You can run the tool manually or you can run the tool automatically by using Systems Manager Automation and the AWSSupport-ExecuteEC2Rescue document.
-
-when using the AD connector for SSO, you cannot use both on-premises AD and third-party integrations at the same time.
-
-
+API Gateway has AWS_IAM authorization feature so that only authorized IAM users can invoke API gate
 
 ## AWS License Manager
 
