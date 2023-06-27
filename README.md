@@ -577,8 +577,8 @@ Snapshot copy grant needs to be setup between regions for redshift clusters to s
 Redshift spectrum (serverless) enables to query data from S3 without loading it. Must have a redshift cluster available to start query
 
 Reshift Workload Management (WLM) enables you to flexibly manage queries' priorities within workloads
-	* Automatic WLM: Managed by Redshift
-	* Manual WLM: Managed by User
+* Automatic WLM: Managed by Redshift
+* Manual WLM: Managed by User
 
 Redshift concurrency scaling (Concurrency Scaling Clusters) enables you to provide consistently fast performance with virtually unlimited concurrent users and queries
 
@@ -635,9 +635,9 @@ OpsWorks is a global service but when you create a stack, you must specify a reg
 You can't manage cross region opsworks stacks, resource created by stack needs to be in same region as the resource managing it
 
 OpsWorks Stacks offers three types of scaling: 
-	* 24/7 for instances that remain on all the time; 
-	* time-based for instances that can be scheduled for a certain time of day and on certain days of the week; 
-	* load-based scaling which will add instances based on metrics. 
+* 24/7 for instances that remain on all the time
+* time-based for instances that can be scheduled for a certain time of day and on certain days of the week
+* load-based scaling which will add instances based on metrics
 
 All this can be configured from within the OpsWorks Stack console
 
@@ -686,10 +686,8 @@ There's no way to share secret from secrets manager using resource access manage
 ## Amazon Workspaces
 
 Amazon Workspaces and AppStream are similar but different. Workspaces are desktop as a service. AppStream is Desktop Application hosting on web UI and streaming service, clients can access AppStream applications via web browser and work on them.
-
-e.g give virtual desktop or hosted applications for seasonal workers to access your internal services and prevent data theft
-
-e.g AppStream can be used for product demo by preconfiguring everything and access application via web browser
+* e.g give virtual desktop or hosted applications for seasonal workers to access your internal services and prevent data theft
+* e.g AppStream can be used for product demo by preconfiguring everything and access application via web browser
 
 ## AWS Connect
 
@@ -746,8 +744,8 @@ Route 53 is DNSSEC compliant
 DNSSEC works only with public hosted zones
 
 Route 53 has Inbound endpoints and outbound endpoints for Hybrid DNS. Forwarding Resolver rules are mapping of domain name to IP for query forwarding. System rules override forwarding rules.
-    * Inbound Endpoint – provides DNS resolution of AWS resources, such as EC2 instances, for your corporate network
-    * Outbound Endpoint – provides resolution of specific DNS names that you configure using forwarding rules to your VPC
+* Inbound Endpoint – provides DNS resolution of AWS resources, such as EC2 instances, for your corporate network
+* Outbound Endpoint – provides resolution of specific DNS names that you configure using forwarding rules to your VPC
 
 Resolver Rules work seamlessly with RAM for cross account resource sharing
 
@@ -1243,7 +1241,7 @@ QuickSight has users and groups only available in QuickSight and this is not IAM
 
 A Dashboard is a read-only snapshot of an analysis that you can share, it preserves configuration of analysis
 
-A dashboard can be shared with users and groups in quicksight
+A Dashboard can be shared with users and groups in quicksight
 
 ## AWS OpenSearch
 
@@ -1284,8 +1282,8 @@ AWS Control Tower - Account Factory
 
 AWS Control Tower - Guardrails
 * Provides ongoing governance for your control tower environment
-	Preventive - uses SCPs
-	Detective - uses AWS Config
+** Preventive - uses SCPs
+** Detective - uses AWS Config
 
 ## IoT Landscape
 Device Connection
