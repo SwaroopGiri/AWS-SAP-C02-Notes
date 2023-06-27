@@ -49,6 +49,8 @@ Static Web Hosting
 
 Bittorrent Protocol: Use Bittorrent protocol to retrieve publically available object by automatically generating .torrent files. Share objects in S3 over bittorrent protocol
 
+### Glacier
+
 Glacier is used by AWS Storage Gateway Virtual Tape Library
 
 Glacier Has Faster retrieval speeds options if you pay more, not too fast to stream but fast retrieval of data
@@ -63,44 +65,82 @@ Once a glacier vault lock is attached to glacier vault, it is permanent
 
 Bucket policies are resource based policies, if bucket explictly allows access to a user/resource then the policy in IAM role makes no difference.
 
-EBS are tied to single AZ and can only be used with EC2
-Use Snapshots to migrate EBS to different AZ
-EBS Snapshots can be used to create encrypted volume from unencrypted volume.
-They are used to share EBS data with other accounts
+## EBS
 
-Instance Stores are locked to an EC2 instance, they are Ephermal and can only be used for cache, buffers, etc. 
-Data is lost once instance stopped or terminated.
-Instance Stores perform better than EBS because they are directly attached to instance and are not on network like EBS
+EBS are tied to single AZ and can only be used with EC2
+
+You can use EBS Multi-Attach to attach an EBS volume to multiple instances
+
+Use Snapshots to migrate EBS to different AZ
+
+EBS Snapshots can be used to create encrypted volume from unencrypted volume.
+
+They are used to share EBS data with other accounts
 
 Snapshots work as incremental backup, consecutive snapshots only record change from previous snapshot and does not record entire volume.
 
 Use Amazon Data Lifecycle manager to schedule snapshots
 
+## Instance Stores
+
+Instance Stores are locked to an EC2 instance, they are Ephermal and can only be used for cache, buffers, etc.
+
+Data is lost once instance stopped or terminated.
+
+Instance Stores perform better than EBS because they are directly attached to instance and are not on network like EBS
+
+## EFS
+
 EFS, We only pay for what we use (Not in case of EBS)
+
 EFS has multi AZ Support and we can configure mount points from multiple AZ
+
 It also supports on prem but make sure we have direct connect for stability but it doesn't take care of security.
 
 Amazon DataSync is recommended to sync data between on prem and AWS EFS
 
 EFS is 3x more expensive than EBS and 20x more expensive than S3
 
+## Storage Gateway
+
 Storage Gateway is a VM which you can download and run onsite with VMWare or HyperV or on EC2. Provides local storage resources backed by AWS S3 and Glacier.
+
 You can spin up a Storage Gateway in your datacenter, mount volumes on it and then sync it to S3
+
 It is often used as a disaster recovery preparedness to sync data to AWS. Also useful for cloud migrations.
 
 Storage Gateway has different modes
-File Gateway(File level): NFS/SMB Shares synced to S3
-Volume Gateway Stored Mode(Block level): Async replication of data to S3 via iSCSI
-Volume Gateway Cached Mode(Block level): Primary data is stored to S3 and frequently access data is cached locally, it uses iSCSI
-Tape Gateway: Virtual Tape Library to be used with existing backup software on prem, uses iSCSI
+	File Gateway(File level): NFS/SMB Shares synced to S3
+ 
+	Volume Gateway Stored Mode(Block level): Async replication of data to S3 via iSCSI
+ 
+	Volume Gateway Cached Mode(Block level): Primary data is stored to S3 and frequently access data is cached locally, it uses iSCSI
+ 
+	Tape Gateway: Virtual Tape Library to be used with existing backup software on prem, uses iSCSI
+ 
 Used for cloud migration. Setup volume gateway stored mode to sync data to S3 and then switch over to cached mode because most of data is stored to S3.
 
+## WorkDocs
+
 Amazon WorkDocs is Amazon's version of dropbox. It can integrate with AD for SSO, has web, mobile and native client. HIPAA, PCI DSS and ISO Compliant.
+
+## RDS
 
 In occassions where database isn't supported by RDS, you can run a database on EC2.
 
 RDS is best suited for structured, relational data store needs. Automated backups and patching in customer defined maintenance windows.
+
 Push button scaling, replication and redundancy
+
+RDS has Multi-AZ Synchronous replication. Use Read Replicas across different regions, replication using read replica across regions is async.
+
+In multi AZ replication, if master DB fails, standby automatically becomes master. Read Replicas are not automatically promoted to master and it is a multistep process.
+
+In case of region failure, Read Replicas need to be manually promoted to master db in single AZ and then we need to reconfigure it to multi AZ.
+
+MariaDB is open-source fork of MySQL
+
+## Types of Data
 
 Lots of Large Binary Objects (BLOBs) --> use S3
 
@@ -114,11 +154,7 @@ Unsupported Database platforms like IBM DB2 or SAP HANA --> EC2
 
 Need complete control over database --> EC2
 
-RDS has Multi-AZ Synchronous replication. Use Read Replicas across different regions, replication using read replica across regions is async.
-In multi AZ replication, if master DB fails, standby automatically becomes master. Read Replicas are not automatically promoted to master and it is a multistep process.
-In case of region failure, Read Replicas need to be manually promoted to master db in single AZ and then we need to reconfigure it to multi AZ.
-
-MariaDB is open-source fork of MySQL
+## DynamoDB
 
 DynamoDB is managed multi-AZ noSQL data Store with cross region replication option
 Reads are eventual consistent but you can request strongly consistent read via SDK parameters
