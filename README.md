@@ -1705,16 +1705,13 @@ Integration now has a new version where CodePipeline and Github are linked toget
 
 ## Extras
 
-=-------------------------------------------------------------=
-= AWS Solution Architect Professional Notes - Adrian Cantrill =
-=-------------------------------------------------------------=
+* AWS Solution Architect Professional Notes - Adrian Cantrill 
 
 https://github.com/Ernyoke/certified-aws-solutions-architect-professional
 
 https://github.com/aandr26/AWS-SAP-C01-Study-Guide
 
-=---------------------------------------------------=
-= AWS Solution Architect Professional Notes - Udemy =
-=---------------------------------------------------=
+
+* AWS Solution Architect Professional Notes - Udemy 
 
 https://kopelman.notion.site/kopelman/da7773633cc64f018cc98356833a30f1?v=c8e0e996dd704f0ebb3053e24180c40a
