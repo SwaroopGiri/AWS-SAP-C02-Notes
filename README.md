@@ -792,19 +792,19 @@ An in-place upgrade upgrades the operating system files while your personal sett
 
 A Disposable Upgrade is one were a new release is deployed on new instances while instances containing the old version are terminated.
 
-immutable: in the same environment (so under the same load balancer) a new autoscaling group is created alongside the old one. As soon as the first new instance is created it starts to serve traffic. When the new instances are all healthy the old ones are switched off.
+* Immutable: in the same environment (so under the same load balancer) a new autoscaling group is created alongside the old one. As soon as the first new instance is created it starts to serve traffic. When the new instances are all healthy the old ones are switched off.
 
-blue/green: a new environment is created from scratch (so another load balancer). The switch is performed at DNS level routing the traffic from the OLD to the NEW when the new environment is ready and healthy.
+* Blue/Green: a new environment is created from scratch (so another load balancer). The switch is performed at DNS level routing the traffic from the OLD to the NEW when the new environment is ready and healthy.
 
 The main difference is that in the immutable update, the new instances serve traffic alongside the old ones, while in the blue/green this doesn't happen (you have an instant complete switch from old to new).
 
-All-at-once deployment means all traffic is shifted from the original environment to the replacement environment all at once. All at Once deployment offers the shortest deployment time but it will incur downtime as the instances are upgraded.
+* All-at-Once deployment means all traffic is shifted from the original environment to the replacement environment all at once. All at Once deployment offers the shortest deployment time but it will incur downtime as the instances are upgraded.
+
+* Rolling Splits the instances into batches and deploys to one batch at a time
+
+* Rolling with additional batch Splits the deployments into batches but for the first batch creates new EC2 instances instead of deploying on the existing EC2 instances
 
 Rolling with additional batch is only applicable in Elastic Beanstalk
-
-Rolling Splits the instances into batches and deploys to one batch at a time
-
-Rolling with additional batch Splits the deployments into batches but for the first batch creates new EC2 instances instead of deploying on the existing EC2 instances
 
 Immutable environment updates ensure that configuration changes that require replacing instances are applied efficiently and safely
 
@@ -877,21 +877,21 @@ AWS CodePipeline is a continuous delivery service that enables you to model, vis
 
 AWS CodeStar is a service that leverages other services like the ones above and has tools which helps us create templates to utilize above servies so you don't have to do things manually
 
-CodeArtifact is only for store, publish and share artifacts. It does not allow the user to configure custom actions or scripts to perform unit tests on artifacts. It is recommended to use AWS CodeBuild for this scenario
+AWS CodeArtifact is only for store, publish and share artifacts. It does not allow the user to configure custom actions or scripts to perform unit tests on artifacts. It is recommended to use AWS CodeBuild for this scenario
 
 ## Cost Optimization
 
-Appropriate Provisioning: Only Provision resources that you need and nothing more
+* Appropriate Provisioning: Only Provision resources that you need and nothing more
 
-Right-Sizing: Use lowest cost resource that still meets the technical specifications
+* Right-Sizing: Use lowest cost resource that still meets the technical specifications
 
-Purchase Options: Reserved Instances provide best cost advantage, spot are good for temporary horizontal scaling, EC2 fleet lets you define target mix of OnDemand, reserved and Spot Instances.
+* Purchase Options: Reserved Instances provide best cost advantage, spot are good for temporary horizontal scaling, EC2 fleet lets you define target mix of OnDemand, reserved and Spot Instances.
 
-Geographic Selection: Pricing vary from region to region
+* Geographic Selection: Pricing vary from region to region
 
-Managed Services: Leverage managed services over self-managed services to reduce cost overhead
+* Managed Services: Leverage managed services over self-managed services to reduce cost overhead
 
-Optimized Data Transfer: Moving data in AWS does not cost anything but moving data out of aws incurs charges. Data going between AWS regions can become a significant cost component.
+* Optimized Data Transfer: Moving data in AWS does not cost anything but moving data out of aws incurs charges. Data going between AWS regions can become a significant cost component.
 
 ## Reserved Instances
 
@@ -909,9 +909,9 @@ Only Convertible Reserved Instances allow for moving between instance families
 
 ## Spot Instances
 
-One-Time Request: instance is terminated and data is lost
+* One-Time Request: instance is terminated and data is lost
 
-Request and Maintain: Instance can be configured to terminate, stop or hibernate until price point can be met again
+* Request and Maintain: Instance can be configured to terminate, stop or hibernate until price point can be met again
 
 ## Dedicated Instances
 
@@ -1138,7 +1138,7 @@ Resource sharing needs to be explictly enabled by organization for it to work
 
 Most shared resources are regional and can only be accessed within same region
 
-e.g. 
+Use Cases:
 * Share single VPC infra across multiple organizations instead of networking each vpc in each account together
 * share certificate authorities across accounts to reduct cost and complexity
 
@@ -1241,7 +1241,7 @@ QuickSight has users and groups only available in QuickSight and this is not IAM
 
 A Dashboard is a read-only snapshot of an analysis that you can share, it preserves configuration of analysis
 
-A Dashboard can be shared with users and groups in quicksight
+A Dashboard can be shared with users and groups in Quicksight
 
 ## AWS OpenSearch
 
@@ -1381,7 +1381,7 @@ AWS IAM Identity Center supports only SAML 2.0–based applications
 
 AWS IAM Identity Center uses permission sets to assign access
 
-when using the AD connector for SSO, you cannot use both on-premises AD and third-party integrations at the same time
+When using the AD connector for SSO, you cannot use both on-premises AD and third-party integrations at the same time
 
 ## Permission Sets
 
@@ -1389,9 +1389,9 @@ Permission sets are a collection of one or more IAM Policies
 
 You don't neet to create any assumed roles, permission sets do that automatically behind the scenes
 
-## Cloud HSM
+## CloudHSM
 
-Use cloud HSM if question asks FIPS 140-2 Level 3 validation. KMS is level
+Use CloudHSM if question asks FIPS 140-2 Level 3 validation. KMS is level 2
 
 CloudHSM supports SSL acceleration where the SSL queries are offloaded to HSM and it does the computing instead of EC2 instances. Must setup a cryptographic user on cloudhsm device and make sure instances and use that user.
 
@@ -1609,31 +1609,31 @@ AWS Elastic Disaster Recovery is used to quickly and easily recover your physica
 
 ## Machine Learning Landscape
 
-Comprehend - Amazon Comprehend uses natural-language processing (NLP) to help you understand the meaning and sentiment in your text
+* Comprehend - Amazon Comprehend uses natural-language processing (NLP) to help you understand the meaning and sentiment in your text
 
-Kendra - Intelligent search service out of Unstructured text (e.g search something from set of PDFs)
+* Kendra - Intelligent search service out of Unstructured text (e.g search something from set of PDFs)
 
-Textract - High powered OCR engine, picture to text
+* Textract - High powered OCR engine, picture to text
 
-Forecast - Analyze time-series data with other variables to deliver highly accurate forecasts
+* Forecast - Analyze time-series data with other variables to deliver highly accurate forecasts
 
-Fraud Detector - Build fraud detection machine learning model which is highly customized based on your data
+* Fraud Detector - Build fraud detection machine learning model which is highly customized based on your data
 
-Transcribe - real-time transcription of Audio to text (CC) (Alexa)
+* Transcribe - real-time transcription of Audio to text (CC) (Alexa)
 
-Lex - Build conversational interfaces to understand intent and context of text. (Alexa) Build Chatbots
+* Lex - Build conversational interfaces to understand intent and context of text. (Alexa) Build Chatbots
 
-Polly - Converts text to natural speech (Alexa)
+* Polly - Converts text to natural speech (Alexa)
 
-Rekognition - Image and video analysis to recognise objects, people, expressions, etc. Uses: Content Moderation using AI/ML, Hate Speech recognisiton, etc
+* Rekognition - Image and video analysis to recognise objects, people, expressions, etc. Uses: Content Moderation using AI/ML, Hate Speech recognisiton, etc
 
-SageMaker - Manage Labeling jobs for training Datasets using active learning and human labeling. Has Jupyter Notebook. Train and Tune Models. Package and deploy your machine learning models at scale
+* SageMaker - Manage Labeling jobs for training Datasets using active learning and human labeling. Has Jupyter Notebook. Train and Tune Models. Package and deploy your machine learning models at scale
 
-Sagemaker NEO - Optimized Architecture Binary. Optimizes machine learning models to run on different CPU Architecture
+* Sagemaker NEO - Optimized Architecture Binary. Optimizes machine learning models to run on different CPU Architecture
 
-Translate - use deep learning to translate languages
+* Translate - use deep learning to translate languages
 
-Personalize - Recommendation engine as a service based on demographic and behavioral data
+* Personalize - Recommendation engine as a service based on demographic and behavioral data
 
 ## Amazon CodeGuru
 
