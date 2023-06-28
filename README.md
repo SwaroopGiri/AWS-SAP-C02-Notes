@@ -512,9 +512,11 @@ Kinesis Producers:
 * 1MB/s or 1000 messages/s write per shard
 * ProvisionedThroughputException otherwise
 * Solution: Increase Shards
+
 Kinesis Consumers:
 * 2MB/s read per shard across all consumers
 * 5 API calls per second per shard
+
 Kinesis Consumer Enhanced Fan-Out Model:
 * 2MB/s read Per Shard, per enhanced consumer. (No API Calls needed, push based service)
 
