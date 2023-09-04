@@ -584,7 +584,7 @@ Reshift Workload Management (WLM) enables you to flexibly manage queries' priori
 
 Redshift concurrency scaling (Concurrency Scaling Clusters) enables you to provide consistently fast performance with virtually unlimited concurrent users and queries
 
-Redshift cluster snapshots can be easily copied by enabline cross-region snapshots
+Redshift cluster snapshots can be easily copied by enabling cross-region snapshots
 
 Set up a snapshot copy grant for a master key in the destination region if snapshots are encrypted by KMS
 
